@@ -1,4 +1,6 @@
-# Prompetition bot
+# Prompetition Bot
+
+The Telegram bot to run competition for the seek of the best prompts. 
 
 ### Implementation plan
 
