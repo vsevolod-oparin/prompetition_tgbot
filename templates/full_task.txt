@@ -1,0 +1,11 @@
+{{ title }} ({{ id }})
+
+Open Texts:
+---{% for key, text in open_snippets.items() %}
+*{{ key }}*: {{ text }}
+---{% endfor %}
+
+Hidden Texts:
+---{% for key, text in hidden_snippets.items() %}
+*{{ key }}*: {{ text }}
+---{% endfor %}

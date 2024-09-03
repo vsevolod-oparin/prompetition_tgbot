@@ -1,0 +1,12 @@
+{
+  "id": "sense_humor_1",
+  "title": "Sense of Humor",
+  "open_snippets": [
+    "snippets/open_1",
+    "snippets/open_2"
+  ],
+  "hidden_snippets": [
+    "snippets/hidden_1",
+    "snippets/hidden_2"
+  ]
+}

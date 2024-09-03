@@ -1,4 +1,4 @@
 .venv/
-data/
 .idea/
 **/__pycache__/
+notebooks/
