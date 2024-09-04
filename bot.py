@@ -19,10 +19,13 @@ import logging
 import os
 from typing import List
 
-from telegram import ForceReply, Update, ChatFullInfo, UserProfilePhotos
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, PicklePersistence
+from pygments.lexer import default
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, PicklePersistence
 
-from bot_handler import TGBotHandler
+from bot_partials.prompting import TGBotHandler
+from bot_partials.router import MessageRouter
+from bot_partials.selector import TGSelector
 
 # Enable logging
 logging.basicConfig(
@@ -54,6 +57,9 @@ def main(args) -> None:
     """Start the bot."""
 
     bot_handler = TGBotHandler(args)
+    bot_selector = TGSelector(args)
+    bot_router = MessageRouter([bot_selector, bot_handler], default_partial=bot_handler)
+
     # Create the Application and pass it your bot's token.
     persistence = PicklePersistence(filepath=f"{args.persistence_dir}/prompetition_bot")
     application = (Application.builder()
@@ -63,13 +69,17 @@ def main(args) -> None:
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", bot_handler.start))
-    application.add_handler(CommandHandler("show_task", bot_handler.show_task))
+
     application.add_handler(CommandHandler("switch", bot_handler.switch_debug_mode))
     application.add_handler(CommandHandler("submit", bot_handler.submit))
     application.add_handler(CommandHandler("help", bot_handler.help_command))
 
+    application.add_handler(CommandHandler("show_task", bot_selector.show_task))
+    application.add_handler(CommandHandler("task_list", bot_selector.task_list))
+    application.add_handler(CommandHandler("select", bot_selector.select_task))
+
     # on non command i.e message - echo the message on Telegram
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_handler.message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_router.message))
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)

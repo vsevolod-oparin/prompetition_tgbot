@@ -3,17 +3,20 @@ import asyncio
 import json
 import os
 from pathlib import Path
+from typing import List
 
 from openai import AsyncOpenAI
 from telegram import ForceReply, Update, ChatFullInfo, UserProfilePhotos
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
+from bot_partials.partial import Partial
+from bot_partials.state import MessageState
 from core.ai import get_ai_response
 from core.task import PromptTask
 from core.utils import html_escape
 
 # Fast Demo
-demo_task = PromptTask(task_dir='data/dates')
+demo_task = PromptTask(task_dir='data/dates_en')
 demo_matcher = demo_task.get_matcher()
 
 aclient = AsyncOpenAI(
@@ -50,10 +53,14 @@ async def compute_open_task(task, aclient, prompt, matcher):
     lines.append('</code>')
     return '\n'.join(lines)
 
-class TGBotHandler:
+class TGBotHandler(Partial):
 
     def __init__(self, args: argparse.Namespace):
         self.data_root = Path(args.data_root)
+
+    @property
+    def message_states(self) -> List[MessageState]:
+        return [MessageState.PROMPT_EDIT, MessageState.IDLE]
 
     ######################
     #  GENERAL MESSAGES  #
@@ -64,10 +71,6 @@ class TGBotHandler:
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
         await update.message.reply_text('Starting very demo bot.')
-
-    async def show_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /start is issued."""
-        await update.effective_user.send_message(str(demo_task), parse_mode='HTML')
 
     async def switch_debug_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""

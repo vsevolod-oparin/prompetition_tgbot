@@ -1,6 +1,7 @@
 {
-  "id": "dates_1",
-  "title": "Find the Dates",
+  "id": "dates_ru",
+  "title": "Найди даты",
+  "lang": "ru",
   "description": "Given a text message, find all mentioned dates be them explicit or implicit. The output message should end with triple dashes '---' followed by the list of dates in format <year>/<month>/<day>. See the sample prompt for the details.",
   "sample_prompt_pth": "sample_prompt.txt",
   "exposed": true,

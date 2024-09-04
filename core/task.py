@@ -58,6 +58,20 @@ class PromptTask:
     def hidden_snippets(self) -> Dict:
         return self.get_snippets('hidden_snippets')
 
+    def short_description(self) -> str:
+        env = Environment(loader=FileSystemLoader('templates'))
+        template = env.get_template('short_task.txt')
+        return template.render(
+            id=self.id,
+            title=html_escape(self.title),
+            description=html_escape(self.description),
+            sample_prompt=html_escape(self.sample_prompt),
+            open_snippets={
+                k: html_escape_obj(obj)
+                for k, obj in self.open_snippets.items()
+            },
+        )
+
     def __repr__(self) -> str:
         env = Environment(loader=FileSystemLoader('templates'))
         template = env.get_template('full_task.txt')

@@ -1,0 +1,11 @@
+<b>{{ title }} ({{ id }})</b>
+
+<b>Description</b>: {{ description }}
+
+<b>Open Texts:</b>{% for name, obj in open_snippets.items() %}
+
+- <b>{{ name }}:</b> {{ obj['Task'] }}
+<code>Answer: {{ obj['Answer'] }}</code>{% endfor %}
+
+<b>Sample prompt</b>:
+<code>{{ sample_prompt }}</code>
