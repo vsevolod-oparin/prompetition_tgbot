@@ -4,7 +4,7 @@ from typing import Dict
 
 from core.matcher import AvgIoUMatcher, matcher_from_name
 from core.transform_pipe import TransformPipe
-from core.utils import from_json_file, from_txt_file, PathLike, html_escape
+from core.utils import from_json_file, from_txt_file, PathLike, html_escape, html_escape_obj
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -63,17 +63,17 @@ class PromptTask:
         template = env.get_template('full_task.txt')
         return template.render(
             id=self.id,
-            title=self.title,
-            description=self.description,
+            title=html_escape(self.title),
+            description=html_escape(self.description),
             sample_prompt=html_escape(self.sample_prompt),
             open_snippets={
-                k: json.dumps(obj, indent=2)
+                k: html_escape_obj(obj)
                 for k, obj in self.open_snippets.items()
             },
             hidden_snippets={
-                k: json.dumps(obj, indent=2)
+                k: html_escape_obj(obj)
                 for k, obj in self.hidden_snippets.items()
-            }
+            },
         )
 
     def get_snippets(self, snippet_type):
@@ -83,8 +83,8 @@ class PromptTask:
             txt_pth = self.task_dir / snippet / 'task.txt'
             answer_pth = self.task_dir / snippet / 'answer.json'
             result[snippet.name] = {
-                'txt': from_txt_file(txt_pth),
-                'answer': from_json_file(answer_pth)
+                'Task': from_txt_file(txt_pth),
+                'Answer': from_json_file(answer_pth)
             }
         return result
 

@@ -25,3 +25,16 @@ def html_escape(msg: str) -> str:
         .replace('&', '&amp;') \
         .replace('<', '&lt;') \
         .replace('>', '&gt;')
+
+def html_escape_obj(obj):
+    if isinstance(obj, list):
+        return [html_escape_obj(o) for o in obj]
+    elif isinstance(obj, dict):
+        return {
+            html_escape(k): html_escape_obj(v)
+            for k, v in obj.items()
+        }
+    elif isinstance(obj, str):
+        return html_escape(obj)
+    else:
+        return obj

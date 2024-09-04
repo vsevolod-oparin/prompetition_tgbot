@@ -22,8 +22,8 @@ aclient = AsyncOpenAI(
 )
 
 async def process_snippet(idd, name, snippet_dct, aclient, prompt, matcher, task):
-    snippet_txt = snippet_dct['txt']
-    snippet_answer = snippet_dct['answer']
+    snippet_txt = snippet_dct['Task']
+    snippet_answer = snippet_dct['Answer']
     result = await get_ai_response(
         client=aclient,
         system_prompt=prompt,
@@ -42,12 +42,11 @@ async def compute_open_task(task, aclient, prompt, matcher):
     results = await asyncio.gather(*tasks)
 
     lines = [
+        f'<b>Score: {matcher.score() * 100:.2f}%</b>',
         '<code>',
-        f'Score: {matcher.score():.2f}%',
-        '-' * 10,
     ]
     for idd, name, score, result_data, answer_data in sorted(results):
-        lines.append(f'{idd + 1}. {name}: {score:.2f}: {result_data = }, {answer_data = }')
+        lines.append(f'{idd + 1}. {name}\n  score: {score:.2f}\n  {result_data = }\n  {answer_data = }')
     lines.append('</code>')
     return '\n'.join(lines)
 
@@ -100,13 +99,15 @@ class TGBotHandler:
             return
         debug = context.user_data.get("debug", False)
         if not debug:
+            message = await update.effective_user.send_message('Computing...')
             result_msg = await compute_open_task(demo_task, aclient, prompt, demo_matcher)
-            await update.effective_user.send_message(result_msg, parse_mode='HTML')
+            await message.edit_text(result_msg, parse_mode='HTML')
+            # await update.effective_user.send_message()
         else:
             for idd, (name, snippet_dct) in enumerate(demo_task.open_snippets.items()):
                 await update.effective_user.send_message(f'Processing Task {idd + 1}. {name}')
-                snippet_txt = snippet_dct['txt']
-                snippet_answer = snippet_dct['answer']
+                snippet_txt = snippet_dct['Task']
+                snippet_answer = snippet_dct['Answer']
                 result_msg = await get_ai_response(
                     client=aclient,
                     system_prompt=prompt,
@@ -118,8 +119,8 @@ class TGBotHandler:
                 await update.effective_user.send_message(
                     f'Score: <b>{score}</b>\n\n'
                     f'Text:\n<code>{html_escape(snippet_txt)}</code>\n\n'
-                    f'Result data:\n<code>{result_data}</code>\n'
-                    f'Answer data:\n<code>{answer_data}</code>\n'
+                    f'Result:\n<code>{result_data}</code>\n'
+                    f'Answer:\n<code>{answer_data}</code>\n'
                     f'Result message:\n<code>### BEGIN ###\n{result_msg}\n### END ###</code>\n', parse_mode='HTML'
                 )
         context.user_data["prompt"] = ""

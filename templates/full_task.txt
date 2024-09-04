@@ -2,18 +2,17 @@
 
 <b>Description</b>: {{ description }}
 
-<code>
-Open Texts:
----{% for key, txt in open_snippets.items() %}
-Name: {{ key }}
-{{ txt }}
----{% endfor %}
+<b>Open Texts:</b>
+{% for name, obj in open_snippets.items() %}
+<b>Name</b>: {{ name }}
+{% for key, value in obj.items() %}<b>{{ key }}</b>: {{ value }}
+{% endfor %}{% endfor %}
 
-Hidden Texts:
----{% for key, txt in hidden_snippets.items() %}
-Name: {{ key }}
-{{ txt }}
----{% endfor %}
-</code>
+{% if hidden_snippets %}<b>Hidden Texts:</b>
+{% for name, obj in hidden_snippets.items() %}
+<b>Name</b>: {{ name }}
+{% for key, value in obj.items() %}<b>{{ key }}</b>: {{ value }}
+{% endfor %}{% endfor %}
+{% endif %}
 <b>Sample prompt</b>:
 <code>{{ sample_prompt }}</code>
