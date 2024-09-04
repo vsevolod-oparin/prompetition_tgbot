@@ -1,13 +1,12 @@
 import argparse
 import asyncio
-import json
 import os
 from pathlib import Path
 from typing import List
 
 from openai import AsyncOpenAI
-from telegram import ForceReply, Update, ChatFullInfo, UserProfilePhotos
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram import Update
+from telegram.ext import ContextTypes
 
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState

@@ -1,19 +1,13 @@
 import argparse
-import asyncio
-import json
-import os
 from collections import defaultdict
 from pathlib import Path
 from typing import List, Optional
 
-from anyio import current_effective_deadline
-from openai import AsyncOpenAI
-from telegram import ForceReply, Update, ChatFullInfo, UserProfilePhotos
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram import Update
+from telegram.ext import ContextTypes
 
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
-from core.ai import get_ai_response
 from core.task import PromptTask
 from core.utils import html_escape, from_json_file
 
