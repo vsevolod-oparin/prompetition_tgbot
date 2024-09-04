@@ -4,8 +4,9 @@ import json
 import os
 from collections import defaultdict
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
+from anyio import current_effective_deadline
 from openai import AsyncOpenAI
 from telegram import ForceReply, Update, ChatFullInfo, UserProfilePhotos
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
@@ -15,6 +16,39 @@ from bot_partials.state import MessageState
 from core.ai import get_ai_response
 from core.task import PromptTask
 from core.utils import html_escape, from_json_file
+
+class FocusManagement:
+
+    def __init__(self, context: ContextTypes.DEFAULT_TYPE):
+        self.context = context
+        self.task = context.user_data.get('task', None)
+        self.snippet = context.user_data.get('snippet', None)
+
+    def update_context(self):
+        self.context.user_data['task'] = self.task
+        self.context.user_data['snippet'] = self.snippet
+
+    def update_task(self, new_task):
+        if self.task == new_task:
+            return
+        self.task = new_task
+        self.snippet = None
+        self.update_context()
+
+    def update_snippet(self, new_snippet):
+        if self.snippet == new_snippet:
+            return
+        self.snippet = new_snippet
+        self.update_context()
+
+    def unselect_task(self):
+        self.task = None
+        self.snippet = None
+        self.update_context()
+
+    def unselect_snippet(self):
+        self.snippet = None
+        self.update_context()
 
 
 class TGSelector(Partial):
@@ -29,7 +63,7 @@ class TGSelector(Partial):
 
     @property
     def message_states(self) -> List[MessageState]:
-        return [MessageState.TASK_SELECTION]
+        return [MessageState.TASK_SELECTION, MessageState.SNIPPET_SELECTION]
 
     def get_task_id_map(self):
         task_conf_list = [
@@ -69,6 +103,7 @@ class TGSelector(Partial):
         await update.message.reply_text('\n'.join(result_lst).strip(), parse_mode='HTML')
 
     async def _select_task(self, search_token: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        focus = FocusManagement(context)
         choices = []
         for idd, pth in self.get_task_id_map().items():
             if search_token in idd:
@@ -78,13 +113,12 @@ class TGSelector(Partial):
             await update.effective_user.send_message(f'No task found with id {search_token}.')
             context.user_data['state'] = MessageState.TASK_SELECTION
         elif choice_num == 1:
-            context.user_data['task'] = choices[0]
+            focus.update_task(choices[0])
             context.user_data['state'] = MessageState.IDLE
             await update.effective_user.send_message(f'Task `{choices[0]}` has been selected.')
         else:
             multi_choice = "\n- ".join(choices)
-            current_task = context.user_data['task']
-            suffix = "No task selected." if current_task is None else f"Current task stays: {current_task}"
+            suffix = "No task selected." if focus.task is None else f"Current task stays: {focus.task}"
             await update.effective_user.send_message(
                 ' '.join([
                     f'Multiple tasks found:\n- {multi_choice}.',
@@ -102,94 +136,102 @@ class TGSelector(Partial):
         else:
             await self._select_task(search_token, update, context)
 
+    async def _get_task_or_complain(self, update: Update, context: ContextTypes.DEFAULT_TYPE, *, if_not: str) -> Optional[PromptTask]:
+        focus = FocusManagement(context)
+        if focus.task is None:
+            await update.effective_user.send_message(if_not)
+            return None
+        return self.get_current_task(focus.task)
+
+    async def snippet_list(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        current_task = await self._get_task_or_complain(
+            update,
+            context,
+            if_not="To see the snippets, you must select a task first. Use /select command.",
+        )
+        if current_task is None:
+            return
+
+        snippets = current_task.open_snippets
+        title = f'<b>{html_escape(current_task.title_with_id)}</b>'
+        snippet_lines = [f'- <b>{name}</b>: {html_escape(obj["Task"])}' for name, obj in snippets.items()]
+        all_lins = [title, ''] + snippet_lines
+        await update.effective_user.send_message('\n'.join(all_lins), parse_mode='HTML')
+
+    async def _select_snippet(self, search_token: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        current_task = await self._get_task_or_complain(
+            update,
+            context,
+            if_not="To select the snippet, you must select a task first. Use /select command.",
+        )
+        if current_task is None:
+            return
+
+        focus = FocusManagement(context)
+        snippets_names = current_task.open_snippets.keys()
+        choices = []
+        for name in snippets_names:
+            if search_token in name:
+                choices.append(name)
+        choice_num = len(choices)
+        if choice_num == 0:
+            await update.effective_user.send_message(f'No snippet found with id {search_token}.')
+            context.user_data['state'] = MessageState.SNIPPET_SELECTION
+        elif choice_num == 1:
+            focus.update_snippet(choices[0])
+            context.user_data['state'] = MessageState.IDLE
+            await update.effective_user.send_message(f'Task `{choices[0]}` has been selected.')
+        else:
+            multi_choice = "\n- ".join(choices)
+            suffix = "No snippet selected." if focus.snippet is None else f"Current snippet is {focus.snippet}"
+            await update.effective_user.send_message(
+                ' '.join([
+                    f'Multiple snippets found:\n- {multi_choice}.',
+                    suffix
+                ])
+            )
+            context.user_data['state'] = MessageState.SNIPPET_SELECTION
+
+    async def snippet_select(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        search_token = update.message.text.strip()
+        search_token = ' '.join(search_token.split(' ')[1:])
+        if search_token == "":
+            await update.message.reply_text('Select the snippet by typing snippet id.')
+            context.user_data['state'] = MessageState.SNIPPET_SELECTION
+        else:
+            await self._select_snippet(search_token, update, context)
+
+    async def snippet_unfocus(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        focus = FocusManagement(context)
+        if focus.snippet is None:
+            await update.effective_user.send_message(f'No snippet to unselect.')
+            return
+
+        old_snippet = focus.snippet
+        focus.update_snippet(None)
+        await update.effective_user.send_message(f'Snippet `{old_snippet}` has been unselected.')
+
     async def show_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
-        task_id = context.user_data.get('task', None)
-        if task_id is None:
-            await update.effective_user.send_message("Select the task first. Use /select command.")
+        current_task = await self._get_task_or_complain(
+            update,
+            context,
+            if_not="To see the task, select a task first. Use /select command.",
+        )
+        if current_task is None:
             return
-        current_task = self.get_current_task(task_id)
-        await update.effective_user.send_message(current_task.short_description(), parse_mode='HTML')
+        focus = FocusManagement(context)
+        await update.effective_user.send_message(current_task.short_description(snippet=focus.snippet), parse_mode='HTML')
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if context.user_data['state'] == MessageState.TASK_SELECTION:
             search_token = update.message.text.strip()
             await self._select_task(search_token, update, context)
+        elif context.user_data['state'] == MessageState.SNIPPET_SELECTION:
+            search_token = update.message.text.strip()
+            await self._select_snippet(search_token, update, context)
         else:
             context.user_data['state'] = MessageState.IDLE
-
-    ######################
-    #  GENERAL MESSAGES  #
-    ######################
-
-    # Define a few command handlers. These usually take the two arguments update and
-    # context.
-
-    '''
-    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /start is issued."""
-        await update.message.reply_text('Starting very demo bot.')
-
-    async def show_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /start is issued."""
-        await update.effective_user.send_message(str(demo_task), parse_mode='HTML')
-
-    async def switch_debug_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /start is issued."""
-        debug = context.user_data.get("debug", False)
-        debug = not debug
-        context.user_data['debug'] = debug
-        message = "Debug mode is on." if debug else "Debug mode is off."
-        await update.effective_user.send_message(message)
-
-    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /help is issued."""
-        await update.message.reply_text("Help!")
-
-    async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Echo the user message."""
-        prompt = update.message.text
-        context.user_data["prompt"] = prompt
-        prompt = html_escape(prompt)
-        prompt.replace('<', '&lt;')
-        await update.effective_user.send_message(
-            f"New prompt:\n<code>{prompt}</code>\n\nDon't forget to run /submit.", parse_mode='HTML'
-        )
-
-    async def submit(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /start is issued."""
-        prompt = context.user_data.get("prompt", "")
-        if prompt == "":
-            await update.effective_user.send_message("Please enter your prompt first.")
-            return
-        debug = context.user_data.get("debug", False)
-        if not debug:
-            message = await update.effective_user.send_message('Computing...')
-            result_msg = await compute_open_task(demo_task, aclient, prompt, demo_matcher)
-            await message.edit_text(result_msg, parse_mode='HTML')
-            # await update.effective_user.send_message()
-        else:
-            for idd, (name, snippet_dct) in enumerate(demo_task.open_snippets.items()):
-                await update.effective_user.send_message(f'Processing Task {idd + 1}. {name}')
-                snippet_txt = snippet_dct['Task']
-                snippet_answer = snippet_dct['Answer']
-                result_msg = await get_ai_response(
-                    client=aclient,
-                    system_prompt=prompt,
-                    prompt=snippet_txt
-                )
-                result_data = demo_task.reply_pipe(result_msg)
-                answer_data = demo_task.answer_pipe(snippet_answer)
-                score = demo_matcher.accumulate(result_data, answer_data)
-                await update.effective_user.send_message(
-                    f'Score: <b>{score}</b>\n\n'
-                    f'Text:\n<code>{html_escape(snippet_txt)}</code>\n\n'
-                    f'Result:\n<code>{result_data}</code>\n'
-                    f'Answer:\n<code>{answer_data}</code>\n'
-                    f'Result message:\n<code>### BEGIN ###\n{result_msg}\n### END ###</code>\n', parse_mode='HTML'
-                )
-        context.user_data["prompt"] = ""
-        '''
 
 
 

@@ -43,12 +43,16 @@ class PromptTask:
         return self.task_info['id']
 
     @property
-    def description(self):
-        return self.task_info['description']
-
-    @property
     def title(self):
         return self.task_info['title']
+
+    @property
+    def title_with_id(self):
+        return f'{self.title} ({self.id})'
+
+    @property
+    def description(self):
+        return self.task_info['description']
 
     @property
     def open_snippets(self) -> Dict:
@@ -58,18 +62,24 @@ class PromptTask:
     def hidden_snippets(self) -> Dict:
         return self.get_snippets('hidden_snippets')
 
-    def short_description(self) -> str:
+    def short_description(self, snippet: str = None) -> str:
         env = Environment(loader=FileSystemLoader('templates'))
         template = env.get_template('short_task.txt')
+        open_snippets = {
+            k: html_escape_obj(obj)
+            for k, obj in self.open_snippets.items()
+        }
+        if snippet is not None:
+            obj = open_snippets.pop(snippet)
+            new_open_snippets ={f'[FOCUS] {snippet}': obj}
+            new_open_snippets.update(open_snippets)
+            open_snippets = new_open_snippets
         return template.render(
             id=self.id,
             title=html_escape(self.title),
             description=html_escape(self.description),
             sample_prompt=html_escape(self.sample_prompt),
-            open_snippets={
-                k: html_escape_obj(obj)
-                for k, obj in self.open_snippets.items()
-            },
+            open_snippets=open_snippets,
         )
 
     def __repr__(self) -> str:

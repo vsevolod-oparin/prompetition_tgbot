@@ -19,10 +19,15 @@ TG Commands Control
 
 ```
 start - start the bot
+help - help command
 switch - to switch debug mode
-show_task - show current task
 submit - submit prompt
+task_show - show current task
 task_list - list the tasks
+task_select - list the tasks
+snippet_list - list snippets per task
+snippet_focus - select to snippet to run prompt on
+snippet_unfocus - forget snippet selection
 ```
 
 ### Implementation plan

@@ -74,9 +74,13 @@ def main(args) -> None:
     application.add_handler(CommandHandler("submit", bot_handler.submit))
     application.add_handler(CommandHandler("help", bot_handler.help_command))
 
-    application.add_handler(CommandHandler("show_task", bot_selector.show_task))
+    application.add_handler(CommandHandler("task_show", bot_selector.show_task))
     application.add_handler(CommandHandler("task_list", bot_selector.task_list))
-    application.add_handler(CommandHandler("select", bot_selector.select_task))
+    application.add_handler(CommandHandler("task_select", bot_selector.select_task))
+
+    application.add_handler(CommandHandler("snippet_list", bot_selector.snippet_list))
+    application.add_handler(CommandHandler("snippet_focus", bot_selector.snippet_select))
+    application.add_handler(CommandHandler("snippet_unfocus", bot_selector.snippet_unfocus))
 
     # on non command i.e message - echo the message on Telegram
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_router.message))
