@@ -21,7 +21,7 @@ async def get_ai_response(*,
         temperature=temperature,
         stream=False
     )
-    return response
+    return response.choices[0].message.content
 
 async def stream_ai_response(*,
         client: AsyncOpenAI,

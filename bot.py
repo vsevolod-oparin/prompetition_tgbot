@@ -41,6 +41,12 @@ def parse_args(input_string: List[str] = None) -> argparse.Namespace:
         default='data',
         help="Path to vector base directory"
     )
+    parser.add_argument(
+        "--persistence_dir",
+        type=str,
+        default='persistence',
+        help="Path to vector base directory"
+    )
     return parser.parse_args(input_string)
 
 
@@ -49,7 +55,7 @@ def main(args) -> None:
 
     bot_handler = TGBotHandler(args)
     # Create the Application and pass it your bot's token.
-    persistence = PicklePersistence(filepath=f"{args.data_root}/prompetition_bot")
+    persistence = PicklePersistence(filepath=f"{args.persistence_dir}/prompetition_bot")
     application = (Application.builder()
                    .token(os.environ.get("TG_TOKEN"))
                    .persistence(persistence)
@@ -57,6 +63,9 @@ def main(args) -> None:
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("start", bot_handler.start))
+    application.add_handler(CommandHandler("show_task", bot_handler.show_task))
+    application.add_handler(CommandHandler("switch", bot_handler.switch_debug_mode))
+    application.add_handler(CommandHandler("submit", bot_handler.submit))
     application.add_handler(CommandHandler("help", bot_handler.help_command))
 
     # on non command i.e message - echo the message on Telegram

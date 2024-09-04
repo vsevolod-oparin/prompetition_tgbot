@@ -1,11 +1,19 @@
-{{ title }} ({{ id }})
+<b>{{ title }} ({{ id }})</b>
 
+<b>Description</b>: {{ description }}
+
+<code>
 Open Texts:
----{% for key, text in open_snippets.items() %}
-*{{ key }}*: {{ text }}
+---{% for key, txt in open_snippets.items() %}
+Name: {{ key }}
+{{ txt }}
 ---{% endfor %}
 
 Hidden Texts:
----{% for key, text in hidden_snippets.items() %}
-*{{ key }}*: {{ text }}
+---{% for key, txt in hidden_snippets.items() %}
+Name: {{ key }}
+{{ txt }}
 ---{% endfor %}
+</code>
+<b>Sample prompt</b>:
+<code>{{ sample_prompt }}</code>

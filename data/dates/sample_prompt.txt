@@ -1,0 +1,7 @@
+Find all the mentioned dates in the user message.
+Give them in the digital form: <year>/<month>/<day>.
+List dates only and nothing else.
+
+Out format should be in the format:
+---
+<LIST OF UNIQUE DATES>

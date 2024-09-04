@@ -1,0 +1,24 @@
+{
+  "id": "dates_1",
+  "title": "Find the Dates",
+  "description": "Given a text message, find all mentioned dates be them explicit or implicit. The dates should be formatted as the sample prompt suggests.",
+  "sample_prompt_pth": "sample_prompt.txt",
+  "exposed": true,
+  "open_snippets": [
+    "snippets/open_1",
+    "snippets/open_2",
+    "snippets/open_3",
+    "snippets/open_4"
+  ],
+  "hidden_snippets": [],
+  "matcher": "avg_iou",
+  "reply_pipe": [
+    {"type": "last_chunk", "separator":  "---"},
+    {"type": "line_split"},
+    {"type": "to_answer_type"}
+  ],
+  "answer_pipe": [
+    {"type": "to_answer_type"}
+  ],
+  "answer_type": "set"
+}

@@ -2,6 +2,26 @@
 
 The Telegram bot to run competition for the seek of the best prompts. 
 
+### Bot commands
+
+Fixed task
+- show open snippets
+- run prompt on full task -- score only
+- run prompt on full task -- debug mode
+
+Extended multi task:
+- select task
+- list tasks
+
+- run prompt on specific snippet in debug mode
+
+TG Commands Control
+
+start - start the bot
+switch - to switch debug mode
+show_task - show current task
+submit - submit prompt
+
 ### Implementation plan
 
 1. Implement first competition
