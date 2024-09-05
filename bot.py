@@ -19,14 +19,14 @@ import logging
 import os
 from typing import List
 
-from pygments.lexer import default
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, PicklePersistence
 
+from bot_partials.general import TGBotGeneral
 from bot_partials.prompting import TGBotHandler
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
-from bot_partials.task_management import TaskManager
+from core.task_management import TaskManager
 
 # Enable logging
 logging.basicConfig(
@@ -58,9 +58,19 @@ def main(args) -> None:
     """Start the bot."""
 
     task_manager = TaskManager(args)
+
+    bot_general = TGBotGeneral()
     bot_handler = TGBotHandler(task_manager)
     bot_selector = TGSelector(task_manager)
-    bot_router = MessageRouter([bot_selector, bot_handler], default_partial=bot_handler)
+
+    bot_router = MessageRouter(
+        partials=[
+            bot_selector,
+            bot_handler,
+            bot_general
+        ],
+        default_partial=bot_handler
+    )
 
     # Create the Application and pass it your bot's token.
     persistence = PicklePersistence(filepath=f"{args.persistence_dir}/prompetition_bot")
@@ -70,11 +80,12 @@ def main(args) -> None:
                    .build())
 
     # on different commands - answer in Telegram
-    application.add_handler(CommandHandler("start", bot_handler.start))
+    application.add_handler(CommandHandler("start", bot_general.start))
+    application.add_handler(CommandHandler("help", bot_general.help_command))
+    application.add_handler(CommandHandler("set_name", bot_general.set_name))
 
     application.add_handler(CommandHandler("switch", bot_handler.switch_debug_mode))
     application.add_handler(CommandHandler("submit", bot_handler.submit))
-    application.add_handler(CommandHandler("help", bot_handler.help_command))
 
     application.add_handler(CommandHandler("task_show", bot_selector.show_task))
     application.add_handler(CommandHandler("task_list", bot_selector.task_list))

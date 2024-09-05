@@ -10,3 +10,6 @@ class MessageState(Enum):
 
     # Prompting
     PROMPT_EDIT       = 3
+
+    # General
+    EXPECTING_NAME    = 4

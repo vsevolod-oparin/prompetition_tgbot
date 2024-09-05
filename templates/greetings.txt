@@ -1,0 +1,3 @@
+Hello and welcome to Prompetition Bot! The bot to conduct and participate in prompt competitions!
+
+Here, you may select the task, try your prompts and get feedback in fully automatic mode.

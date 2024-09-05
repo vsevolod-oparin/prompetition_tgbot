@@ -1,7 +1,5 @@
-import argparse
 import asyncio
 import os
-from pathlib import Path
 from typing import List
 
 from openai import AsyncOpenAI
@@ -10,7 +8,7 @@ from telegram.ext import ContextTypes
 
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
-from bot_partials.task_management import TaskManager
+from core.task_management import TaskManager
 from core.ai import get_ai_response
 from core.task import PromptTask
 from core.utils import html_escape
@@ -62,16 +60,6 @@ class TGBotHandler(Partial):
     def message_states(self) -> List[MessageState]:
         return [MessageState.PROMPT_EDIT, MessageState.IDLE]
 
-    ######################
-    #  GENERAL MESSAGES  #
-    ######################
-
-    # Define a few command handlers. These usually take the two arguments update and
-    # context.
-    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /start is issued."""
-        await update.message.reply_text('Starting very demo bot.')
-
     async def switch_debug_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
         debug = context.user_data.get("debug", False)
@@ -79,10 +67,6 @@ class TGBotHandler(Partial):
         context.user_data['debug'] = debug
         message = "Debug mode is on." if debug else "Debug mode is off."
         await update.effective_user.send_message(message)
-
-    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Send a message when the command /help is issued."""
-        await update.message.reply_text("Help!")
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Echo the user message."""

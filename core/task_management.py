@@ -2,44 +2,8 @@ import argparse
 from pathlib import Path
 from typing import List
 
-from anyio import get_current_task
-from telegram.ext import ContextTypes
-
 from core.task import PromptTask
 from core.utils import from_json_file
-
-class FocusManagement:
-
-    def __init__(self, context: ContextTypes.DEFAULT_TYPE):
-        self.context = context
-        self.task = context.user_data.get('task', None)
-        self.snippet = context.user_data.get('snippet', None)
-
-    def update_context(self):
-        self.context.user_data['task'] = self.task
-        self.context.user_data['snippet'] = self.snippet
-
-    def update_task(self, new_task):
-        if self.task == new_task:
-            return
-        self.task = new_task
-        self.snippet = None
-        self.update_context()
-
-    def update_snippet(self, new_snippet):
-        if self.snippet == new_snippet:
-            return
-        self.snippet = new_snippet
-        self.update_context()
-
-    def unselect_task(self):
-        self.task = None
-        self.snippet = None
-        self.update_context()
-
-    def unselect_snippet(self):
-        self.snippet = None
-        self.update_context()
 
 
 class TaskManager:
@@ -66,11 +30,7 @@ class TaskManager:
             if (task_dir / 'info.json').exists()
         ]
 
-    def get_current_task_by_focus(self, focus: FocusManagement) -> PromptTask:
-        task_pth = self.get_task_id_map()[focus.task]
-        return PromptTask(Path(task_pth).parent)
-
-    def get_current_task_by_id(self, task_id: str) -> PromptTask:
+    def get_current_task(self, task_id: str) -> PromptTask:
         task_pth = self.get_task_id_map()[task_id]
         return PromptTask(Path(task_pth).parent)
 
