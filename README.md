@@ -30,22 +30,23 @@ snippet_focus - select to snippet to run prompt on
 snippet_unfocus - forget snippet selection
 ```
 
-### Implementation plan
+## Implementation plan
 
-**Done**
-1. Implement first competition
-   1. Collect snippets with texts
-   2. Define the task
-   3. Find the format of the prompt that achieves something reasonable
+MVP is ready.
 
-**TBD**
+### Future plans
 
-2. Define the scheme of data storage
-   1. **[Done]** Separate open snippets from hidden
-   2. Add needed parameters to control
+**Before announcements**
+- Add logging.
+- Save prompts in DB.
+- Add an option to run prompts either on particular snippets, or only open snippets.
+- Implement queueing and callbacks to update status.
+- Implement rate-limited parallel calling
+- Implement leaderboard
+- Fully implement tasks with open and hidden parts
+- Rewrite help and greeting message.
+- Add name demand.
 
-3. Implement matching scheme
-
-4. Implement leaderboard
-
-5. Integrate everything in Telegram bot
+**Future developments**
+- Add needed parameters to control (temperature, freq penalty and so on)
+- Add task verification

@@ -11,7 +11,6 @@ from bot_partials.partial import Partial
 from bot_partials.state import MessageState
 from core.task_management import TaskManager
 from core.ai import get_ai_response
-from core.task import PromptTask
 from core.utils import html_escape
 
 aclient = AsyncOpenAI(
