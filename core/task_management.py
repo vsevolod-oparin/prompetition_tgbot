@@ -24,11 +24,14 @@ class TaskManager:
         return task_map
 
     def fetch_task_conf_list(self):
-        return [
+        task_pths = [
             task_dir / 'info.json'
             for task_dir in self.data_root.glob('*')
             if (task_dir / 'info.json').exists()
         ]
+        task_objs = [from_json_file(task_pth) for task_pth in task_pths]
+        task_objs = [obj for obj in task_objs if obj.get('exposed', True)]
+        return task_objs
 
     def get_current_task(self, task_id: str) -> PromptTask:
         task_pth = self.get_task_id_map()[task_id]

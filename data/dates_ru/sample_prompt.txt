@@ -1,7 +1,7 @@
-Find all the mentioned dates in the user message.
-Give them in the digital form: <year>/<month>/<day>.
-List dates only and nothing else.
+Найди все упоминания дат в сообщении пользователя.
+Выдай даты в виде чисел в формате <год>/<месяц>/<день>
+Выдай только даты и ничего больше.
 
-Out format should be in the format:
+Формат вывода должен быть в следующей форме:
 ---
-<LIST OF UNIQUE DATES>
+<СПИСОК УНИКАЛЬНЫХ ДАТ>

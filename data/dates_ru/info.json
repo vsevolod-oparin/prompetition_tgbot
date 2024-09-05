@@ -2,7 +2,7 @@
   "id": "dates_ru",
   "title": "Найди даты",
   "lang": "ru",
-  "description": "Given a text message, find all mentioned dates be them explicit or implicit. The output message should end with triple dashes '---' followed by the list of dates in format <year>/<month>/<day>. See the sample prompt for the details.",
+  "description": "По заданному сообщению, найдите все даты указанные прямым или косвенным способом. Выход должен заканчиваться тремя дефисами, после которых идет список дат. Формат дат: <год>/<месяц>/<день>. Для деталей, смотрите пример из промпта",
   "sample_prompt_pth": "sample_prompt.txt",
   "exposed": true,
   "open_snippets": [

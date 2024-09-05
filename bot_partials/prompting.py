@@ -6,16 +6,13 @@ from openai import AsyncOpenAI
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from bot_partials.focus import FocusManagement
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
 from core.task_management import TaskManager
 from core.ai import get_ai_response
 from core.task import PromptTask
 from core.utils import html_escape
-
-# Fast Demo
-demo_task = PromptTask(task_dir='data/dates_en')
-demo_matcher = demo_task.get_matcher()
 
 aclient = AsyncOpenAI(
     api_key=os.environ['DS'],
@@ -47,9 +44,10 @@ async def compute_open_task(task, aclient, prompt, matcher):
         '<code>',
     ]
     for idd, name, score, result_data, answer_data in sorted(results):
-        lines.append(f'{idd + 1}. {name}\n  score: {score:.2f}\n  {result_data = }\n  {answer_data = }')
+        lines.append(f'{idd + 1}. {name}\n  score: {score * 100:.2f}%\n  {result_data = }\n  {answer_data = }')
     lines.append('</code>')
     return '\n'.join(lines)
+
 
 class TGBotHandler(Partial):
 
@@ -80,6 +78,14 @@ class TGBotHandler(Partial):
 
     async def submit(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
+        # Fast Demo
+        focus = FocusManagement(context)
+        if focus.task is None:
+            await update.effective_user.send_message("No task selected. Use /task_select to choose one.")
+            return
+        demo_task = self.task_manager.get_current_task(focus.task)
+        demo_matcher = demo_task.get_matcher()
+
         prompt = context.user_data.get("prompt", "")
         if prompt == "":
             await update.effective_user.send_message("Please enter your prompt first.")

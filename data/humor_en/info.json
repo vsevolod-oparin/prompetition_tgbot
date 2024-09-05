@@ -4,7 +4,7 @@
   "lang": "en",
   "description": "Find the hilarious moments in the text.",
   "sample_prompt_pth": "sample_prompt.txt",
-  "exposed": true,
+  "exposed": false,
   "parser": {
     "location": "separated",
     "separator": "---",
