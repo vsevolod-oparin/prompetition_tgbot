@@ -26,6 +26,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, P
 from bot_partials.prompting import TGBotHandler
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
+from bot_partials.task_management import TaskManager
 
 # Enable logging
 logging.basicConfig(
@@ -56,8 +57,9 @@ def parse_args(input_string: List[str] = None) -> argparse.Namespace:
 def main(args) -> None:
     """Start the bot."""
 
-    bot_handler = TGBotHandler(args)
-    bot_selector = TGSelector(args)
+    task_manager = TaskManager(args)
+    bot_handler = TGBotHandler(task_manager)
+    bot_selector = TGSelector(task_manager)
     bot_router = MessageRouter([bot_selector, bot_handler], default_partial=bot_handler)
 
     # Create the Application and pass it your bot's token.

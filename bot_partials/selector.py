@@ -8,80 +8,23 @@ from telegram.ext import ContextTypes
 
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
+from bot_partials.task_management import TaskManager, FocusManagement
 from core.task import PromptTask
 from core.utils import html_escape, from_json_file
 
-class FocusManagement:
-
-    def __init__(self, context: ContextTypes.DEFAULT_TYPE):
-        self.context = context
-        self.task = context.user_data.get('task', None)
-        self.snippet = context.user_data.get('snippet', None)
-
-    def update_context(self):
-        self.context.user_data['task'] = self.task
-        self.context.user_data['snippet'] = self.snippet
-
-    def update_task(self, new_task):
-        if self.task == new_task:
-            return
-        self.task = new_task
-        self.snippet = None
-        self.update_context()
-
-    def update_snippet(self, new_snippet):
-        if self.snippet == new_snippet:
-            return
-        self.snippet = new_snippet
-        self.update_context()
-
-    def unselect_task(self):
-        self.task = None
-        self.snippet = None
-        self.update_context()
-
-    def unselect_snippet(self):
-        self.snippet = None
-        self.update_context()
 
 
 class TGSelector(Partial):
 
-    def __init__(self, args: argparse.Namespace):
-        self.data_root = Path(args.data_root)
-        self.task_conf_list = [
-            task_dir / 'info.json'
-            for task_dir in self.data_root.glob('*')
-            if (task_dir / 'info.json').exists()
-        ]
+    def __init__(self, task_manager: TaskManager):
+        self.task_manager = task_manager
 
     @property
     def message_states(self) -> List[MessageState]:
         return [MessageState.TASK_SELECTION, MessageState.SNIPPET_SELECTION]
 
-    def get_task_id_map(self):
-        task_conf_list = [
-            task_dir / 'info.json'
-            for task_dir in self.data_root.glob('*')
-            if (task_dir / 'info.json').exists()
-        ]
-        task_map = dict()
-        for task_pth in task_conf_list:
-            task_obj = from_json_file(task_pth)
-            task_map[task_obj['id']] = task_pth
-        return task_map
-
-    def get_current_task(self, task_id: str) -> PromptTask:
-        task_pth = self.get_task_id_map()[task_id]
-        return PromptTask(Path(task_pth).parent)
-
-
     async def task_list(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        task_conf_list = [
-            task_dir / 'info.json'
-            for task_dir in self.data_root.glob('*')
-            if (task_dir / 'info.json').exists()
-        ]
+        task_conf_list = self.task_manager.fetch_task_conf_list()
         result_dct = defaultdict(list)
         for task_pth in task_conf_list:
             task_obj = from_json_file(task_pth)
@@ -98,10 +41,7 @@ class TGSelector(Partial):
 
     async def _select_task(self, search_token: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
         focus = FocusManagement(context)
-        choices = []
-        for idd, pth in self.get_task_id_map().items():
-            if search_token in idd:
-                choices.append(idd)
+        choices = self.task_manager.search_tasks(search_token)
         choice_num = len(choices)
         if choice_num == 0:
             await update.effective_user.send_message(f'No task found with id {search_token}.')
@@ -135,7 +75,7 @@ class TGSelector(Partial):
         if focus.task is None:
             await update.effective_user.send_message(if_not)
             return None
-        return self.get_current_task(focus.task)
+        return self.task_manager.get_current_task_by_focus(focus)
 
     async def snippet_list(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_task = await self._get_task_or_complain(
@@ -162,12 +102,9 @@ class TGSelector(Partial):
             return
 
         focus = FocusManagement(context)
-        snippets_names = current_task.open_snippets.keys()
-        choices = []
-        for name in snippets_names:
-            if search_token in name:
-                choices.append(name)
+        choices = self.task_manager.search_snippet(search_token, current_task)
         choice_num = len(choices)
+
         if choice_num == 0:
             await update.effective_user.send_message(f'No snippet found with id {search_token}.')
             context.user_data['state'] = MessageState.SNIPPET_SELECTION

@@ -10,6 +10,7 @@ from telegram.ext import ContextTypes
 
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
+from bot_partials.task_management import TaskManager
 from core.ai import get_ai_response
 from core.task import PromptTask
 from core.utils import html_escape
@@ -54,8 +55,8 @@ async def compute_open_task(task, aclient, prompt, matcher):
 
 class TGBotHandler(Partial):
 
-    def __init__(self, args: argparse.Namespace):
-        self.data_root = Path(args.data_root)
+    def __init__(self, task_manager: TaskManager):
+        self.task_manager = task_manager
 
     @property
     def message_states(self) -> List[MessageState]:
