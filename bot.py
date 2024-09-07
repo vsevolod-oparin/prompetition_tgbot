@@ -20,6 +20,7 @@ import logging
 import os
 from typing import List
 
+from openai import AsyncOpenAI
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, PicklePersistence
 
@@ -27,6 +28,7 @@ from bot_partials.general import TGBotGeneral
 from bot_partials.prompting import TGPrompter
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
+from core.prompter import PromptRunner
 from core.ratelimit import RateLimiter, RateLimitedBatchQueue
 from core.task_management import TaskManager
 
@@ -60,22 +62,28 @@ def main(args) -> None:
     """Start the bot."""
 
 
-    loop = asyncio.get_event_loop()
+    aclient = AsyncOpenAI(
+        api_key=os.environ['DS'],
+        base_url='https://api.deepseek.com/beta'
+    )
+
     task_manager = TaskManager(args)
+
     limiter = RateLimiter()
     queue = RateLimitedBatchQueue(limiter)
+    prompt_runner = PromptRunner(aclient, limiter, queue)
 
     bot_general = TGBotGeneral()
-    bot_handler = TGPrompter(task_manager, queue, limiter)
+    bot_prompter = TGPrompter(task_manager, prompt_runner)
     bot_selector = TGSelector(task_manager)
 
     bot_router = MessageRouter(
         partials=[
             bot_selector,
-            bot_handler,
+            bot_prompter,
             bot_general
         ],
-        default_partial=bot_handler
+        default_partial=bot_prompter
     )
 
     # Create the Application and pass it your bot's token.
@@ -90,8 +98,8 @@ def main(args) -> None:
     application.add_handler(CommandHandler("help", bot_general.help_command))
     application.add_handler(CommandHandler("set_name", bot_general.set_name))
 
-    application.add_handler(CommandHandler("switch", bot_handler.switch_debug_mode))
-    application.add_handler(CommandHandler("submit", bot_handler.submit))
+    application.add_handler(CommandHandler("switch_debug_mode", bot_prompter.switch_debug_mode))
+    application.add_handler(CommandHandler("submit", bot_prompter.submit))
 
     application.add_handler(CommandHandler("task_show", bot_selector.show_task))
     application.add_handler(CommandHandler("task_list", bot_selector.task_list))
