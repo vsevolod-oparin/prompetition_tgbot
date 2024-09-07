@@ -9,6 +9,7 @@ from telegram.ext import ContextTypes
 from bot_partials.focus import FocusManagement
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
+from core.ratelimit import RateLimiter, RateLimitedBatchQueue
 from core.task_management import TaskManager
 from core.ai import get_ai_response
 from core.utils import html_escape
@@ -32,26 +33,12 @@ async def process_snippet(idd, name, snippet_dct, aclient, prompt, matcher, task
     return idd, name, score, result_data, answer_data
 
 
-async def compute_open_task(task, aclient, prompt, matcher):
-    tasks = []
-    for idd, (name, snippet_dct) in enumerate(task.open_snippets.items()):
-        tasks.append(process_snippet(idd, name, snippet_dct, aclient, prompt, matcher, task))
-    results = await asyncio.gather(*tasks)
+class TGPrompter(Partial):
 
-    lines = [
-        f'<b>Score: {matcher.score() * 100:.2f}%</b>',
-        '<code>',
-    ]
-    for idd, name, score, result_data, answer_data in sorted(results):
-        lines.append(f'{idd + 1}. {name}\n  score: {score * 100:.2f}%\n  {result_data = }\n  {answer_data = }')
-    lines.append('</code>')
-    return '\n'.join(lines)
-
-
-class TGBotHandler(Partial):
-
-    def __init__(self, task_manager: TaskManager):
+    def __init__(self, task_manager: TaskManager, queue: RateLimitedBatchQueue, limiter: RateLimiter):
         self.task_manager = task_manager
+        self.queue = queue
+        self.limiter = limiter
 
     @property
     def message_states(self) -> List[MessageState]:
@@ -75,6 +62,25 @@ class TGBotHandler(Partial):
             f"New prompt:\n<code>{prompt}</code>\n\nDon't forget to run /submit.", parse_mode='HTML'
         )
 
+    async def _compute_task_batch(self, task, task_batch, aclient, prompt):
+        matcher = task.get_matcher()
+        tasks = []
+        for idd, (name, snippet_dct) in enumerate(task_batch.items()):
+            tasks.append(process_snippet(idd, name, snippet_dct, aclient, prompt, matcher, task))
+        results = await self.queue.add_batch_task(tasks)
+
+        lines = [
+            f'<b>Score: {matcher.score() * 100:.2f}%</b>',
+            '<code>',
+        ]
+        for idd, name, score, result_data, answer_data in sorted(results):
+            lines.append(f'{idd + 1}. {name}\n  score: {score * 100:.2f}%\n  {result_data = }\n  {answer_data = }')
+        lines.append('</code>')
+        return '\n'.join(lines)
+
+    async def _compute_open_task(self, task, aclient, prompt):
+        return await self._compute_task_batch(task, task.open_snippets, aclient, prompt)
+
     async def submit(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
         # Fast Demo
@@ -82,31 +88,32 @@ class TGBotHandler(Partial):
         if focus.task is None:
             await update.effective_user.send_message("No task selected. Use /task_select to choose one.")
             return
-        demo_task = self.task_manager.get_current_task(focus.task)
-        demo_matcher = demo_task.get_matcher()
-
+        task = self.task_manager.get_current_task(focus.task)
         prompt = context.user_data.get("prompt", "")
+
         if prompt == "":
             await update.effective_user.send_message("Please enter your prompt first.")
             return
         debug = context.user_data.get("debug", False)
         if not debug:
             message = await update.effective_user.send_message('Computing...')
-            result_msg = await compute_open_task(demo_task, aclient, prompt, demo_matcher)
+            result_msg = await self._compute_open_task(task, aclient, prompt)
             await message.edit_text(result_msg, parse_mode='HTML')
             # await update.effective_user.send_message()
         else:
-            for idd, (name, snippet_dct) in enumerate(demo_task.open_snippets.items()):
+            for idd, (name, snippet_dct) in enumerate(task.open_snippets.items()):
                 await update.effective_user.send_message(f'Processing Task {idd + 1}. {name}')
                 snippet_txt = snippet_dct['Task']
                 snippet_answer = snippet_dct['Answer']
-                result_msg = await get_ai_response(
+                result_msg = await self.limiter.submit(get_ai_response(
                     client=aclient,
                     system_prompt=prompt,
                     prompt=snippet_txt
-                )
-                result_data = demo_task.reply_pipe(result_msg)
-                answer_data = demo_task.answer_pipe(snippet_answer)
+                ))
+                result_data = task.reply_pipe(result_msg)
+                answer_data = task.answer_pipe(snippet_answer)
+
+                demo_matcher = task.get_matcher()
                 score = demo_matcher.accumulate(result_data, answer_data)
                 await update.effective_user.send_message(
                     f'Score: <b>{score}</b>\n\n'

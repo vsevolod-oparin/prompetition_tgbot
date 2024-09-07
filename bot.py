@@ -15,6 +15,7 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 import argparse
+import asyncio
 import logging
 import os
 from typing import List
@@ -23,9 +24,10 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, PicklePersistence
 
 from bot_partials.general import TGBotGeneral
-from bot_partials.prompting import TGBotHandler
+from bot_partials.prompting import TGPrompter
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
+from core.ratelimit import RateLimiter, RateLimitedBatchQueue
 from core.task_management import TaskManager
 
 # Enable logging
@@ -57,10 +59,14 @@ def parse_args(input_string: List[str] = None) -> argparse.Namespace:
 def main(args) -> None:
     """Start the bot."""
 
+
+    loop = asyncio.get_event_loop()
     task_manager = TaskManager(args)
+    limiter = RateLimiter()
+    queue = RateLimitedBatchQueue(limiter)
 
     bot_general = TGBotGeneral()
-    bot_handler = TGBotHandler(task_manager)
+    bot_handler = TGPrompter(task_manager, queue, limiter)
     bot_selector = TGSelector(task_manager)
 
     bot_router = MessageRouter(

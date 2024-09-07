@@ -37,16 +37,21 @@ MVP is ready.
 ### Future plans
 
 **Before announcements**
-- Add logging.
++ Implement callbacks to update status.
+
 - Save prompts in DB.
 - Add an option to run prompts either on particular snippets, or only open snippets.
-- Implement queueing and callbacks to update status.
-- Implement rate-limited parallel calling
-- Implement leaderboard
+
+- Add logging.
 - Fully implement tasks with open and hidden parts
-- Rewrite help and greeting message.
+
 - Add name demand.
+- Implement leaderboard
+
+- Rewrite help and greeting message.
+
 
 **Future developments**
 - Add needed parameters to control (temperature, freq penalty and so on)
 - Add task verification
+- Add medals
