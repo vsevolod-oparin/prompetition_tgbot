@@ -6,14 +6,10 @@ from telegram.ext import ContextTypes
 from bot_partials.focus import FocusManagement
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
+from bot_partials.userdata_keys import PROMPT_KEY, AUTOCLEAN_KEY, DEBUG_KEY, STOP_KEY
 from core.prompter import PromptRunner
 from core.task_management import TaskManager
-from core.ai import get_ai_response
 from core.utils import html_escape
-
-DEBUG_KEY = 'debug'
-AUTOCLEAN_KEY = 'autoclean'
-PROMPT_KEY = 'prompt'
 
 
 class TGPrompter(Partial):
@@ -88,6 +84,7 @@ class TGPrompter(Partial):
         if prompt == "":
             await update.effective_user.send_message("Please enter your prompt first.")
             return
+        context.user_data[STOP_KEY] = False
         debug = context.user_data.get(DEBUG_KEY, False)
         if not debug:
             message = await update.effective_user.send_message('Computing...')
@@ -95,15 +92,21 @@ class TGPrompter(Partial):
             await message.edit_text(result_batch.tg_html_form(), parse_mode='HTML')
         else:
             matcher = task.get_matcher()
-            for snippet_id in task.open_snippets:
+            total = len(task.open_snippets)
+            await update.effective_user.send_message(f"Computing on {total} snippets...")
+            for idd, snippet_id in enumerate(task.open_snippets):
                 # TODO: potentialy, we can run it in parallel
+                if context.user_data.get(STOP_KEY, False):
+                    context.user_data[STOP_KEY] = False
+                    break
                 eval = await self.runner.process_snippet(
                     task=task,
                     snippet_id=snippet_id,
                     prompt=prompt,
                     matcher=matcher,
                 )
-                await update.effective_user.send_message(eval.tg_html_form(), parse_mode='HTML')
+                prefix = f'{idd + 1}/{total}. '
+                await update.effective_user.send_message(prefix + eval.tg_html_form(), parse_mode='HTML')
             await update.effective_user.send_message(
                 f'Total open avg score: {matcher.score() * 100:.2f}',
                 parse_mode='HTML'

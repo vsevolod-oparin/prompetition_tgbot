@@ -20,6 +20,8 @@ TG Commands Control
 ```
 start - start the bot
 help - help command
+whoami - get name
+set_name - set new name
 switch_debug_mode - to switch debug mode
 switch_autoclean - empty prompt after submit
 task_show - show current task
@@ -40,20 +42,18 @@ MVP is ready.
 ### Future plans
 
 **Before announcements**
-- Implement callbacks to update status.
 
 - Save prompts in DB.
+- Implement leaderboard.
 
 - Add logging.
-- Fully implement tasks with open and hidden parts
-
-- Add name demand.
-- Implement leaderboard
 
 - Rewrite help and greeting message.
+- Fully implement tasks with open and hidden parts
 
 
 **Future developments**
+- Implement callbacks to update status.
 - Add needed parameters to control (temperature, freq penalty and so on)
 - Add task verification
-- Add medals
+- Add honoring medal

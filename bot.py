@@ -97,9 +97,14 @@ def main(args) -> None:
     application.add_handler(CommandHandler("start", bot_general.start))
     application.add_handler(CommandHandler("help", bot_general.help_command))
     application.add_handler(CommandHandler("set_name", bot_general.set_name))
+    application.add_handler(CommandHandler("whoami", bot_general.whoami))
 
     application.add_handler(CommandHandler("switch_debug_mode", bot_prompter.switch_debug_mode))
-    application.add_handler(CommandHandler("submit", bot_prompter.submit))
+    application.add_handler(CommandHandler("switch_autoclean", bot_prompter.switch_autoclean))
+
+    application.add_handler(CommandHandler("run_snippet", bot_prompter.run_snippet))
+    application.add_handler(CommandHandler("run_open", bot_prompter.run_open))
+    application.add_handler(CommandHandler("run_to_score", bot_prompter.run_to_score))
 
     application.add_handler(CommandHandler("task_show", bot_selector.show_task))
     application.add_handler(CommandHandler("task_list", bot_selector.task_list))

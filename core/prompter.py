@@ -32,10 +32,10 @@ class SnippetEvaluation:
 
     def tg_html_form(self) -> str:
         return "\n".join([
-            f'Score: <b>{self.score * 100.0:.2f}</b>\n'
-            f'Text:\n<code>{html_escape(self.snippet_txt)}</code>\n'
-            f'Result:\n<code>{data_to_str(self.result_data)}</code>'
-            f'Answer:\n<code>{data_to_str(self.answer_data)}</code>'
+            f'Score: <b>{self.score * 100.0:.2f}%</b>',
+            f'Text:\n<code>{html_escape(self.snippet_txt)}</code>',
+            f'Result:\n<code>{data_to_str(self.result_data)}</code>',
+            f'Answer:\n<code>{data_to_str(self.answer_data)}</code>',
             f'Result message:\n<code>### BEGIN ###\n{html_escape(self.result_msg)}\n### END ###</code>'
         ])
 
@@ -51,16 +51,10 @@ class SnippetBatchEvaluation:
         title = self.task_id if self.tag is None else f'{self.task_id}/{self.tag}'
         lines = [
             f'<b>{title} - score: {self.score * 100:.2f}%</b>',
-            '<code>',
         ]
         for idd, evall in enumerate(self.eval_list):
-            lines.extend([
-                f'{idd + 1}. Snippet {evall.snippet_id}',
-                f'  score: {evall.score * 100:.2f}%',
-                f'  {evall.result_data = }',
-                f'  {evall.answer_data = }',
-            ])
-        lines.append('</code>')
+            lines.append(f"{idd + 1}. {evall.snippet_id} {evall.tg_html_form()}")
+
         return '\n'.join(lines)
 
     def tg_html_form_semihidden(self) -> str:

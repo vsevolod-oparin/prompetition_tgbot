@@ -7,9 +7,10 @@ from telegram.ext import ContextTypes
 from bot_partials.focus import FocusManagement
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
+from bot_partials.userdata_keys import STATE_KEY
 from core.task_management import TaskManager
 from core.task import PromptTask
-from core.utils import html_escape, from_json_file
+from core.utils import html_escape
 
 
 class TGSelector(Partial):
@@ -42,10 +43,10 @@ class TGSelector(Partial):
         choice_num = len(choices)
         if choice_num == 0:
             await update.effective_user.send_message(f'No task found with id {search_token}.')
-            context.user_data['state'] = MessageState.TASK_SELECTION
+            context.user_data[STATE_KEY] = MessageState.TASK_SELECTION
         elif choice_num == 1:
             focus.update_task(choices[0])
-            context.user_data['state'] = MessageState.IDLE
+            context.user_data[STATE_KEY] = MessageState.IDLE
             await update.effective_user.send_message(f'Task `{choices[0]}` has been selected.')
         else:
             multi_choice = "\n- ".join(choices)
@@ -56,14 +57,14 @@ class TGSelector(Partial):
                     suffix
                 ])
             )
-            context.user_data['state'] = MessageState.TASK_SELECTION
+            context.user_data[STATE_KEY] = MessageState.TASK_SELECTION
 
     async def select_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         search_token = update.message.text.strip()
         search_token = ' '.join(search_token.split(' ')[1:])
         if search_token == "":
             await update.message.reply_text('Select the task by typing id')
-            context.user_data['state'] = MessageState.TASK_SELECTION
+            context.user_data[STATE_KEY] = MessageState.TASK_SELECTION
         else:
             await self._select_task(search_token, update, context)
 
@@ -104,10 +105,10 @@ class TGSelector(Partial):
 
         if choice_num == 0:
             await update.effective_user.send_message(f'No snippet found with id {search_token}.')
-            context.user_data['state'] = MessageState.SNIPPET_SELECTION
+            context.user_data[STATE_KEY] = MessageState.SNIPPET_SELECTION
         elif choice_num == 1:
             focus.update_snippet(choices[0])
-            context.user_data['state'] = MessageState.IDLE
+            context.user_data[STATE_KEY] = MessageState.IDLE
             await update.effective_user.send_message(f'Task `{choices[0]}` has been selected.')
         else:
             multi_choice = "\n- ".join(choices)
@@ -118,14 +119,14 @@ class TGSelector(Partial):
                     suffix
                 ])
             )
-            context.user_data['state'] = MessageState.SNIPPET_SELECTION
+            context.user_data[STATE_KEY] = MessageState.SNIPPET_SELECTION
 
     async def snippet_select(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         search_token = update.message.text.strip()
         search_token = ' '.join(search_token.split(' ')[1:])
         if search_token == "":
             await update.message.reply_text('Select the snippet by typing snippet id.')
-            context.user_data['state'] = MessageState.SNIPPET_SELECTION
+            context.user_data[STATE_KEY] = MessageState.SNIPPET_SELECTION
         else:
             await self._select_snippet(search_token, update, context)
 
@@ -152,14 +153,14 @@ class TGSelector(Partial):
         await update.effective_user.send_message(current_task.short_description(snippet=focus.snippet), parse_mode='HTML')
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if context.user_data['state'] == MessageState.TASK_SELECTION:
+        if context.user_data[STATE_KEY] == MessageState.TASK_SELECTION:
             search_token = update.message.text.strip()
             await self._select_task(search_token, update, context)
-        elif context.user_data['state'] == MessageState.SNIPPET_SELECTION:
+        elif context.user_data[STATE_KEY] == MessageState.SNIPPET_SELECTION:
             search_token = update.message.text.strip()
             await self._select_snippet(search_token, update, context)
         else:
-            context.user_data['state'] = MessageState.IDLE
+            context.user_data[STATE_KEY] = MessageState.IDLE
 
 
 
