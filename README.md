@@ -44,8 +44,6 @@ PoC is ready.
 
 **Before announcements**
 
-- Implement leaderboard.
-- Add logging.
 - Rewrite help and greeting message.
 - Fully implement tasks with open and hidden parts
 

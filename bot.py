@@ -18,14 +18,18 @@ import argparse
 import asyncio
 import logging
 import os
+from multiprocessing.util import get_logger
+from pathlib import Path
 from typing import List
 
 from openai import AsyncOpenAI
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, PicklePersistence
 
+from bot_partials.errors import TGErrorHandler
 from bot_partials.general import TGBotGeneral
 from bot_partials.leaderboard import TGLeaderboard
+from bot_partials.logger import produce_logger, init_logging
 from bot_partials.prompting import TGPrompter
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
@@ -33,14 +37,6 @@ from core.prompt_db import PromptDBManager
 from core.prompter import PromptRunner
 from core.ratelimit import RateLimiter, RateLimitedBatchQueue
 from core.task_management import TaskManager
-
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-# set higher logging level for httpx to avoid all GET and POST requests being logged
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logger = logging.getLogger(__name__)
 
 
 def parse_args(input_string: List[str] = None) -> argparse.Namespace:
@@ -57,12 +53,18 @@ def parse_args(input_string: List[str] = None) -> argparse.Namespace:
         default='persistence',
         help="Path to vector base directory"
     )
+    parser.add_argument(
+        "--log_pth",
+        type=str,
+        default='logs',
+        help="Path to log file"
+    )
     return parser.parse_args(input_string)
 
 
 def main(args) -> None:
     """Start the bot."""
-
+    init_logging()
 
     aclient = AsyncOpenAI(
         api_key=os.environ['DS'],
@@ -76,10 +78,14 @@ def main(args) -> None:
     queue = RateLimitedBatchQueue(limiter)
     prompt_runner = PromptRunner(aclient, limiter, queue, sql_db)
 
-    bot_general = TGBotGeneral(sql_db)
-    bot_leaderboard = TGLeaderboard(sql_db)
-    bot_prompter = TGPrompter(task_manager, prompt_runner)
-    bot_selector = TGSelector(task_manager)
+    logger = produce_logger(Path(args.log_pth) / 'bot.log')
+    error_logger = produce_logger(Path(args.log_pth) / 'error.log', logger_tag='error_bot')
+
+    bot_general = TGBotGeneral(logger, sql_db)
+    bot_leaderboard = TGLeaderboard(logger, sql_db)
+    bot_prompter = TGPrompter(logger, task_manager, prompt_runner)
+    bot_selector = TGSelector(logger, task_manager)
+    bot_error = TGErrorHandler(error_logger)
 
     bot_router = MessageRouter(
         partials=[
@@ -122,6 +128,8 @@ def main(args) -> None:
 
     # on non command i.e message - echo the message on Telegram
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_router.message))
+
+    application.add_error_handler(bot_error.handler)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)

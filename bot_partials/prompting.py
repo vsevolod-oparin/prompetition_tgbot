@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List
 
 from telegram import Update
@@ -15,8 +16,10 @@ from core.utils import html_escape, tg_user_id
 class TGPrompter(Partial):
 
     def __init__(self,
+                 logger: Logger,
                  task_manager: TaskManager,
                  runner: PromptRunner):
+        self.logger = logger
         self.task_manager = task_manager
         self.runner = runner
 
@@ -26,25 +29,32 @@ class TGPrompter(Partial):
 
     async def switch_debug_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
+        user = update.effective_user
         debug = context.user_data.get(DEBUG_KEY, False)
         debug = not debug
         context.user_data[DEBUG_KEY] = debug
         message = "Debug mode is on." if debug else "Debug mode is off."
+        self.logger.info(f'/switch_debug_mode / {user.id} / {user.name}: {message}')
         await update.effective_chat.send_message(message)
 
     async def switch_autoclean(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
+        user = update.effective_user
         autoclean = context.user_data.get(AUTOCLEAN_KEY, False)
         autoclean = not autoclean
         context.user_data[AUTOCLEAN_KEY] = autoclean
         message = "Autoclean mode is on." if autoclean else "Autoclean mode is off."
+        self.logger.info(f'/switch_autoclean / {user.id} / {user.name}: {message}')
         await update.effective_chat.send_message(message)
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Echo the user message."""
+        user = update.effective_user
         prompt = update.message.text
         context.user_data[PROMPT_KEY] = prompt
         prompt = html_escape(prompt)
+        self.logger.info(f'prompting.message / {user.id} / {user.name}: new prompt set\n{prompt}')
+
         prompt.replace('<', '&lt;')
         hints = [
             "Use /run_open, to run the prompt on open part.",
@@ -59,17 +69,21 @@ class TGPrompter(Partial):
     async def run_to_score(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
         # Fast Demo
+        user = update.effective_user
         focus = FocusManagement(context)
         if focus.task is None:
+            self.logger.info(f'/run_to_score / {user.id} / {user.name}: no task selected')
             await update.effective_chat.send_message("No task selected. Use /task_select to choose one.")
             return
         task = self.task_manager.get_current_task(focus.task)
         prompt = context.user_data.get(PROMPT_KEY, "")
 
         if prompt == "":
+            self.logger.info(f'/run_to_score / {user.id} / {user.name}: no prompt set')
             await update.effective_chat.send_message("Please enter your prompt first.")
             return
 
+        self.logger.info(f'/run_to_score / {user.id} / {user.name}')
         message = await update.effective_chat.send_message('Computing...')
         user_id = tg_user_id(update.effective_user.id)
         result_batch = await self.runner.compute_hidden_batch(task, user_id, prompt)
@@ -81,18 +95,22 @@ class TGPrompter(Partial):
     async def run_open(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
         # Fast Demo
+        user = update.effective_user
         focus = FocusManagement(context)
         if focus.task is None:
+            self.logger.info(f'/run_open / {user.id} / {user.name}: no task selected')
             await update.effective_chat.send_message("No task selected. Use /task_select to choose one.")
             return
         task = self.task_manager.get_current_task(focus.task)
         prompt = context.user_data.get(PROMPT_KEY, "")
 
         if prompt == "":
+            self.logger.info(f'/run_open / {user.id} / {user.name}: no prompt set')
             await update.effective_chat.send_message("Please enter your prompt first.")
             return
         context.user_data[STOP_KEY] = False
         debug = context.user_data.get(DEBUG_KEY, False)
+        self.logger.info(f'/run_open / {user.id} / {user.name} / {debug}')
         if not debug:
             message = await update.effective_chat.send_message('Computing...')
             user_id = tg_user_id(update.effective_user.id)
@@ -123,11 +141,14 @@ class TGPrompter(Partial):
             context.user_data[PROMPT_KEY] = ""
 
     async def run_snippet(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        user = update.effective_user
         focus = FocusManagement(context)
         if focus.task is None:
+            self.logger.info(f'/run_snippet / {user.id} / {user.name}: no prompt set')
             await update.effective_chat.send_message("No task selected. Use /task_select to choose one.")
             return
         if focus.snippet is None:
+            self.logger.info(f'/run_snippet / {user.id} / {user.name} / {focus.task}: no snippet set')
             await update.effective_chat.send_message("No snippet selected. Use /snippet_focus to choose one.")
             return
 
@@ -135,14 +156,17 @@ class TGPrompter(Partial):
         prompt = context.user_data.get(PROMPT_KEY, "")
 
         if prompt == "":
+            self.logger.info(f'/run_snippet / {user.id} / {user.name} / {focus.task} - {focus.snippet}: no prompt set')
             await update.effective_chat.send_message("Please enter your prompt first.")
             return
 
         snippet_dct = task.open_snippets.get(focus.snippet, None)
         if snippet_dct is None:
+            self.logger.info(f'/run_snippet / {user.id} / {user.name} / {focus.task} - {focus.snippet}: no snippet found')
             await update.effective_chat.send_message("Snippet name seems to be broken. Try another one.")
             return
 
+        self.logger.info(f'/run_snippet / {user.id} / {user.name} / {focus.task} - {focus.snippet}: run')
         await update.effective_chat.send_message(f'Processing Task {focus.task} / Snippet: {focus.snippet}')
 
         matcher = task.get_matcher()

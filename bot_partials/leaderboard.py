@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List
 
 from bot_partials.focus import FocusManagement
@@ -15,17 +16,26 @@ LEADERBOARD_SIZE = 10
 
 class TGLeaderboard(Partial):
 
-    def __init__(self, sql_db: PromptDBManager):
+    def __init__(self, logger: Logger, sql_db: PromptDBManager):
+        self.logger = logger
         self.sql_db = sql_db
 
     async def leaderboard(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Get the leaderboard."""
+        user = update.effective_user
         focus = FocusManagement(context)
+        if focus.task is None:
+            self.logger.info(f'/leaderboard / {user.id} / {user.name}: no task')
+            await update.effective_chat.send_message('No task has been selected.')
+            return
+
         board = self.sql_db.form_leader_board(focus.task)
         board = list(map(LeaderRow, board))
-        user_id = tg_user_id(update.effective_user.id)
+
+        user_id = tg_user_id(user.id)
 
         if len(board) == 0:
+            self.logger.info(f'/leaderboard / {user.id} / {user.name} / {focus.task}: empty leaderboard')
             message = f'<b>Leaderboard {focus.task}</b>\n\nNo entries.'
             await update.effective_chat.send_message(message, parse_mode='HTML')
             return
@@ -50,6 +60,7 @@ class TGLeaderboard(Partial):
             if position >= LEADERBOARD_SIZE:
                 top_k_lines.append(f'{position + 1}. {board[position].get_line(user_id)}')
 
+        self.logger.info(f'/leaderboard / {user.id} / {user.name} / {focus.task}: entries num {len(top_k_lines)}')
         top_k_msg = '\n'.join(top_k_lines)
         message = f'<b>Leaderboard {focus.task}</b>\n\n<code>{html_escape(top_k_msg)}</code>'
 
