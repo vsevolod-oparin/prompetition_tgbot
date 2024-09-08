@@ -11,7 +11,12 @@
     "snippets/open_3",
     "snippets/open_4"
   ],
-  "hidden_snippets": [],
+  "hidden_snippets": [
+    "snippets/open_1",
+    "snippets/open_2",
+    "snippets/open_3",
+    "snippets/open_4"
+  ],
   "matcher": "avg_iou",
   "reply_pipe": [
     {"type": "last_chunk", "separator":  "---"},

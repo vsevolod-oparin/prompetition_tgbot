@@ -2,11 +2,11 @@ import dataclasses
 import json
 from typing import Any, Dict, List
 
-from chromadb.rate_limiting import rate_limit
 from openai import AsyncOpenAI
 
 from core.ai import get_ai_response
 from core.matcher import Matcher
+from core.prompt_db import PromptDBManager
 from core.ratelimit import RateLimiter, RateLimitedBatchQueue
 from core.task import PromptTask
 from core.utils import html_escape
@@ -51,11 +51,13 @@ class SnippetBatchEvaluation:
         title = self.task_id if self.tag is None else f'{self.task_id}/{self.tag}'
         lines = [
             f'<b>{title} - score: {self.score * 100:.2f}%</b>',
+            '',
         ]
         for idd, evall in enumerate(self.eval_list):
-            lines.append(f"{idd + 1}. {evall.snippet_id} {evall.tg_html_form()}")
+            lines.append(f"{idd + 1}. <b>{evall.snippet_id}</b>\n{evall.tg_html_form()}")
+            lines.append('')
 
-        return '\n'.join(lines)
+        return '\n'.join(lines).strip()
 
     def tg_html_form_semihidden(self) -> str:
         title = self.task_id if self.tag is None else f'{self.task_id}/{self.tag}'
@@ -65,8 +67,7 @@ class SnippetBatchEvaluation:
         ]
         for idd, evall in enumerate(self.eval_list):
             lines.extend([
-                f'{idd + 1}. Snippet {evall.snippet_id}',
-                f'  score: {evall.score * 100:.2f}%',
+                f'{idd + 1}. {evall.snippet_id}: {evall.score * 100:.2f}%',
             ])
         lines.append('</code>')
         return '\n'.join(lines)
@@ -78,10 +79,15 @@ class SnippetBatchEvaluation:
 
 class PromptRunner:
 
-    def __init__(self, aclient: AsyncOpenAI, rate_limiter: RateLimiter, queue: RateLimitedBatchQueue):
+    def __init__(self,
+                 aclient: AsyncOpenAI,
+                 rate_limiter: RateLimiter,
+                 queue: RateLimitedBatchQueue,
+                 sql_db: PromptDBManager):
         self.aclient = aclient
         self.rate_limiter = rate_limiter
         self.queue = queue
+        self.sql_db = sql_db
 
     async def process_snippet(self,
                               task: PromptTask,
@@ -128,18 +134,34 @@ class PromptRunner:
             tag=tag
         )
 
-    async def compute_open_batch(self, task: PromptTask, prompt: str):
-        return await self.compute_task_batch(
+    async def compute_open_batch(self, task: PromptTask, user_id: str, prompt: str):
+        evall = await self.compute_task_batch(
             task=task,
             snippet_dct=task.open_snippets,
             prompt=prompt,
             tag="open"
         )
+        self.sql_db.insert_prompt_run(
+            user_id=user_id,
+            task_id=task.id,
+            prompt_text=prompt,
+            open_score=evall.score,
+            open_runs=1,
+        )
+        return evall
 
-    async def compute_hidden_batch(self, task: PromptTask, prompt: str):
-        return await self.compute_task_batch(
+    async def compute_hidden_batch(self, task: PromptTask, user_id: str, prompt: str):
+        evall = await self.compute_task_batch(
             task=task,
             snippet_dct=task.hidden_snippets,
             prompt=prompt,
             tag="hidden"
         )
+        self.sql_db.insert_prompt_run(
+            user_id=user_id,
+            task_id=task.id,
+            prompt_text=prompt,
+            hidden_score=evall.score,
+            hidden_runs=1,
+        )
+        return evall

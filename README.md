@@ -42,17 +42,15 @@ MVP is ready.
 ### Future plans
 
 **Before announcements**
-
-- Save prompts in DB.
 - Implement leaderboard.
-
 - Add logging.
-
 - Rewrite help and greeting message.
+
 - Fully implement tasks with open and hidden parts
 
 
 **Future developments**
+- Custom LLM inside the task
 - Implement callbacks to update status.
 - Add needed parameters to control (temperature, freq penalty and so on)
 - Add task verification

@@ -28,6 +28,7 @@ from bot_partials.general import TGBotGeneral
 from bot_partials.prompting import TGPrompter
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
+from core.prompt_db import PromptDBManager
 from core.prompter import PromptRunner
 from core.ratelimit import RateLimiter, RateLimitedBatchQueue
 from core.task_management import TaskManager
@@ -68,12 +69,13 @@ def main(args) -> None:
     )
 
     task_manager = TaskManager(args)
+    sql_db = PromptDBManager()
 
     limiter = RateLimiter()
     queue = RateLimitedBatchQueue(limiter)
-    prompt_runner = PromptRunner(aclient, limiter, queue)
+    prompt_runner = PromptRunner(aclient, limiter, queue, sql_db)
 
-    bot_general = TGBotGeneral()
+    bot_general = TGBotGeneral(sql_db)
     bot_prompter = TGPrompter(task_manager, prompt_runner)
     bot_selector = TGSelector(task_manager)
 

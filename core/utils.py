@@ -38,3 +38,6 @@ def html_escape_obj(obj):
         return html_escape(obj)
     else:
         return obj
+
+def tg_user_id(id) -> str:
+    return f'TG:{id}'

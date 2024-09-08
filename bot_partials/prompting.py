@@ -9,7 +9,7 @@ from bot_partials.state import MessageState
 from bot_partials.userdata_keys import PROMPT_KEY, AUTOCLEAN_KEY, DEBUG_KEY, STOP_KEY
 from core.prompter import PromptRunner
 from core.task_management import TaskManager
-from core.utils import html_escape
+from core.utils import html_escape, tg_user_id
 
 
 class TGPrompter(Partial):
@@ -65,8 +65,9 @@ class TGPrompter(Partial):
             return
 
         message = await update.effective_user.send_message('Computing...')
-        result_batch = await self.runner.compute_hidden_batch(task, prompt)
-        await message.edit_text(result_batch.tg_html_shortform(), parse_mode='HTML')
+        user_id = tg_user_id(update.effective_user.id)
+        result_batch = await self.runner.compute_hidden_batch(task, user_id, prompt)
+        await message.edit_text(result_batch.tg_html_form_semihidden(), parse_mode='HTML')
 
         if context.user_data.get(AUTOCLEAN_KEY, False):
             context.user_data[PROMPT_KEY] = ""
@@ -88,7 +89,8 @@ class TGPrompter(Partial):
         debug = context.user_data.get(DEBUG_KEY, False)
         if not debug:
             message = await update.effective_user.send_message('Computing...')
-            result_batch = await self.runner.compute_open_batch(task, prompt)
+            user_id = tg_user_id(update.effective_user.id)
+            result_batch = await self.runner.compute_open_batch(task, user_id, prompt)
             await message.edit_text(result_batch.tg_html_form(), parse_mode='HTML')
         else:
             matcher = task.get_matcher()
