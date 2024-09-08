@@ -42,16 +42,16 @@ class TGSelector(Partial):
         choices = self.task_manager.search_tasks(search_token)
         choice_num = len(choices)
         if choice_num == 0:
-            await update.effective_user.send_message(f'No task found with id {search_token}.')
+            await update.effective_chat.send_message(f'No task found with id {search_token}.')
             context.user_data[STATE_KEY] = MessageState.TASK_SELECTION
         elif choice_num == 1:
             focus.update_task(choices[0])
             context.user_data[STATE_KEY] = MessageState.IDLE
-            await update.effective_user.send_message(f'Task `{choices[0]}` has been selected.')
+            await update.effective_chat.send_message(f'Task `{choices[0]}` has been selected.')
         else:
             multi_choice = "\n- ".join(choices)
             suffix = "No task selected." if focus.task is None else f"Current task stays: {focus.task}"
-            await update.effective_user.send_message(
+            await update.effective_chat.send_message(
                 ' '.join([
                     f'Multiple tasks found:\n- {multi_choice}.',
                     suffix
@@ -71,7 +71,7 @@ class TGSelector(Partial):
     async def _get_task_or_complain(self, update: Update, context: ContextTypes.DEFAULT_TYPE, *, if_not: str) -> Optional[PromptTask]:
         focus = FocusManagement(context)
         if focus.task is None:
-            await update.effective_user.send_message(if_not)
+            await update.effective_chat.send_message(if_not)
             return None
         return self.task_manager.get_current_task(focus.task)
 
@@ -88,7 +88,7 @@ class TGSelector(Partial):
         title = f'<b>{html_escape(current_task.title_with_id)}</b>'
         snippet_lines = [f'- <b>{name}</b>: {html_escape(obj["Task"])}' for name, obj in snippets.items()]
         all_lins = [title, ''] + snippet_lines
-        await update.effective_user.send_message('\n'.join(all_lins), parse_mode='HTML')
+        await update.effective_chat.send_message('\n'.join(all_lins), parse_mode='HTML')
 
     async def _select_snippet(self, search_token: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_task = await self._get_task_or_complain(
@@ -104,16 +104,16 @@ class TGSelector(Partial):
         choice_num = len(choices)
 
         if choice_num == 0:
-            await update.effective_user.send_message(f'No snippet found with id {search_token}.')
+            await update.effective_chat.send_message(f'No snippet found with id {search_token}.')
             context.user_data[STATE_KEY] = MessageState.SNIPPET_SELECTION
         elif choice_num == 1:
             focus.update_snippet(choices[0])
             context.user_data[STATE_KEY] = MessageState.IDLE
-            await update.effective_user.send_message(f'Task `{choices[0]}` has been selected.')
+            await update.effective_chat.send_message(f'Task `{choices[0]}` has been selected.')
         else:
             multi_choice = "\n- ".join(choices)
             suffix = "No snippet selected." if focus.snippet is None else f"Current snippet is {focus.snippet}"
-            await update.effective_user.send_message(
+            await update.effective_chat.send_message(
                 ' '.join([
                     f'Multiple snippets found:\n- {multi_choice}.',
                     suffix
@@ -133,12 +133,12 @@ class TGSelector(Partial):
     async def snippet_unfocus(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         focus = FocusManagement(context)
         if focus.snippet is None:
-            await update.effective_user.send_message(f'No snippet to unselect.')
+            await update.effective_chat.send_message(f'No snippet to unselect.')
             return
 
         old_snippet = focus.snippet
         focus.update_snippet(None)
-        await update.effective_user.send_message(f'Snippet `{old_snippet}` has been unselected.')
+        await update.effective_chat.send_message(f'Snippet `{old_snippet}` has been unselected.')
 
     async def show_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
@@ -150,7 +150,7 @@ class TGSelector(Partial):
         if current_task is None:
             return
         focus = FocusManagement(context)
-        await update.effective_user.send_message(current_task.short_description(snippet=focus.snippet), parse_mode='HTML')
+        await update.effective_chat.send_message(current_task.short_description(snippet=focus.snippet), parse_mode='HTML')
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if context.user_data[STATE_KEY] == MessageState.TASK_SELECTION:

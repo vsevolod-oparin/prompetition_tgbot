@@ -23,20 +23,20 @@ class TGBotGeneral(Partial):
     # context.
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
-        await update.effective_user.send_message(from_txt_file('templates/greetings.txt'))
+        await update.effective_chat.send_message(from_txt_file('templates/greetings.txt'))
         context.user_data[STATE_KEY] = MessageState.EXPECTING_NAME
         if USER_NAME_KEY not in context.user_data:
-            await update.effective_user.send_message('Before running the bot, please set your name:')
+            await update.effective_chat.send_message('Before running the bot, please set your name:')
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /help is issued."""
-        await update.effective_user.send_message(from_txt_file('templates/help.txt'))
+        await update.effective_chat.send_message(from_txt_file('templates/help.txt'))
 
     async def whoami(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /help is issued."""
         name = context.user_data.get(USER_NAME_KEY, None)
         message = name or "No name has been found."
-        await update.effective_user.send_message(message)
+        await update.effective_chat.send_message(message)
 
     async def set_name(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /help is issued."""
@@ -46,13 +46,13 @@ class TGBotGeneral(Partial):
             context.user_data[USER_NAME_KEY] = name
             self.sql_db.update_user_name(tg_user_id(update.effective_user.id), name)
             context.user_data[STATE_KEY] = MessageState.IDLE
-            await update.effective_user.send_message(
+            await update.effective_chat.send_message(
                 f"Ok, now your name is stored as <b>{name}</b>. You can change it with /set_name.",
                 parse_mode='HTML',
             )
         else:
             context.user_data[STATE_KEY] = MessageState.EXPECTING_NAME
-            await update.effective_user.send_message("Ok, now type your name in:")
+            await update.effective_chat.send_message("Ok, now type your name in:")
 
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Echo the user message."""
@@ -62,11 +62,11 @@ class TGBotGeneral(Partial):
                 context.user_data[USER_NAME_KEY] = name
                 self.sql_db.update_user_name(tg_user_id(update.effective_user.id), name)
                 context.user_data[STATE_KEY] = MessageState.IDLE
-                await update.effective_user.send_message(
+                await update.effective_chat.send_message(
                     f"Ok, now your name is stored as <b>{name}</b></>. You can change it with /set_name.",
                     parse_mode='HTML'
                 )
             else:
-                await update.effective_user.send_message(
+                await update.effective_chat.send_message(
                     f"Can't see the name. Try again."
                 )
