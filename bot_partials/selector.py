@@ -57,10 +57,12 @@ class TGSelector(Partial):
             self.logger.info(f'/task_select / {user.id} / {user.name} / {search_token}: single task {choices[0]}.')
             context.user_data[STATE_KEY] = MessageState.IDLE
             await update.effective_chat.send_message(f'Task `{choices[0]}` has been selected.')
+            current_task = self.task_manager.get_current_task(focus.task)
+            await update.effective_chat.send_message(current_task.short_description(), parse_mode='HTML')
         else:
             self.logger.info(f'/task_select / {user.id} / {user.name} / {search_token}: multiple tasks {len(choices)}.')
             multi_choice = "\n- ".join(choices)
-            suffix = "No task selected." if focus.task is None else f"Current task stays: {focus.task}"
+            suffix = "\nNo task selected." if focus.task is None else f"\nCurrent task stays: {focus.task}"
             await update.effective_chat.send_message(
                 ' '.join([
                     f'Multiple tasks found:\n- {multi_choice}.',
