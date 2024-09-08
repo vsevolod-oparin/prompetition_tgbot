@@ -33,19 +33,20 @@ snippet_unfocus - forget snippet selection
 run_snippet - run prompt only on snippet under focus
 run_open - run prompt on open part
 run_to_score - run prompt on hidden part to get score
+leaderboard - leaderboard per task
 ```
 
 ## Implementation plan
 
-MVP is ready.
+PoC is ready.
 
 ### Future plans
 
 **Before announcements**
+
 - Implement leaderboard.
 - Add logging.
 - Rewrite help and greeting message.
-
 - Fully implement tasks with open and hidden parts
 
 

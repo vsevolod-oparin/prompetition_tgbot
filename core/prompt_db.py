@@ -1,9 +1,33 @@
 import sqlite3
 import json
-import unittest
 from datetime import datetime
 from typing import List, Any
 
+
+import dataclasses
+
+@dataclasses.dataclass
+class LeaderRow:
+    def __init__(self, tuple):
+        self.run_id = tuple[0]
+        self.user_id = tuple[1]
+        self.user_name = tuple[2]
+        self.task_id = tuple[3]
+        self.prompt = tuple[4]
+        self.hidden_value = tuple[5]
+        self.open_value = tuple[6]
+        if tuple[7]:
+            self.parameters_json = json.loads(tuple[7])
+        else:
+            self.parameters_json = None
+        self.creation_date = tuple[8]
+
+    def get_line(self, user_id: str) -> str:
+        prompt = self.prompt
+        user_name = self.user_name
+        if user_id and user_id == self.user_id:
+            user_name = user_name + " (YOU)"
+        return f'{self.hidden_value * 100:3.2f} - {user_name} - {len(prompt) = }'
 
 class PromptDBManager:
     def __init__(self, db_name: str = 'persistence/sql.db'):
@@ -132,7 +156,7 @@ class PromptDBManager:
             ''', (user_id, user_name))
         self.conn.commit()
 
-    def get_top_k_prompts(self, task_id, k):
+    def get_top_k_prompts(self, task_id: str, k: int):
         query = '''
             SELECT 
                 p.prompt, pr.open_score, pr.open_runs, pr.hidden_score, pr.hidden_runs, pr.parameters_json
@@ -143,6 +167,63 @@ class PromptDBManager:
             LIMIT ?
         '''
         self.cursor.execute(query, (task_id, k))
+        return self.cursor.fetchall()
+
+    def form_leader_board(self, task_id: str):
+        query = '''
+            WITH CalculatedValues AS (
+                SELECT
+                    run_id,
+                    user_id,
+                    task_id,
+                    prompt_id,
+                    parameters_json,
+                    creation_date,
+                    CASE
+                        WHEN hidden_runs > 0 THEN hidden_score / hidden_runs
+                        ELSE 0
+                    END AS hidden_value,
+                    CASE
+                        WHEN open_runs > 0 THEN open_score / open_runs
+                        ELSE 0
+                    END AS open_value
+                FROM 
+                    prompt_runs
+                WHERE
+                    task_id = ?
+            ),
+            SortedValues AS (
+                SELECT
+                    *,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY user_id, task_id 
+                        ORDER BY hidden_value DESC
+                    ) AS rn
+                FROM 
+                    CalculatedValues
+            )
+            SELECT
+                sv.run_id,
+                sv.user_id,
+                u.user_name,
+                sv.task_id,
+                p.prompt,
+                sv.hidden_value,
+                sv.open_value,
+                sv.parameters_json,
+                sv.creation_date
+            FROM 
+                SortedValues sv
+            JOIN
+                users u ON sv.user_id = u.user_id
+            JOIN
+                prompts p ON sv.prompt_id = p.prompt_id
+            WHERE
+                sv.rn = 1
+            ORDER BY
+                sv.hidden_value DESC, sv.creation_date ASC
+        '''
+        self.cursor.execute(query, (task_id,))
         return self.cursor.fetchall()
 
     def get_top_k_user_prompts(self, user_id, task_id, k):

@@ -46,8 +46,14 @@ class TGPrompter(Partial):
         context.user_data[PROMPT_KEY] = prompt
         prompt = html_escape(prompt)
         prompt.replace('<', '&lt;')
+        hints = [
+            "Use /run_open, to run the prompt on open part.",
+            "Use run /run_to_score, to run the prompt on hidden scorable part.",
+            "Use /snippet_focus and /run_snippet, to run on a single snippet.",
+        ]
+        hint_msg = '\n'.join(hints)
         await update.effective_chat.send_message(
-            f"New prompt:\n<code>{prompt}</code>\n\nDon't forget to run /submit.", parse_mode='HTML'
+            f"New prompt:\n<code>{prompt}</code>\n\n{hint_msg}", parse_mode='HTML'
         )
 
     async def run_to_score(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

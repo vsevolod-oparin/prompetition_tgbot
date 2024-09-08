@@ -20,7 +20,8 @@ class TaskManager:
         task_map = dict()
         for task_pth in task_conf_list:
             task_obj = from_json_file(task_pth)
-            task_map[task_obj['id']] = task_pth
+            if task_obj.get('exposed', True):
+                task_map[task_obj['id']] = task_pth
         return task_map
 
     def fetch_task_conf_list(self):

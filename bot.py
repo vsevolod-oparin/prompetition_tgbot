@@ -25,6 +25,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, PicklePersistence
 
 from bot_partials.general import TGBotGeneral
+from bot_partials.leaderboard import TGLeaderboard
 from bot_partials.prompting import TGPrompter
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
@@ -76,6 +77,7 @@ def main(args) -> None:
     prompt_runner = PromptRunner(aclient, limiter, queue, sql_db)
 
     bot_general = TGBotGeneral(sql_db)
+    bot_leaderboard = TGLeaderboard(sql_db)
     bot_prompter = TGPrompter(task_manager, prompt_runner)
     bot_selector = TGSelector(task_manager)
 
@@ -115,6 +117,8 @@ def main(args) -> None:
     application.add_handler(CommandHandler("snippet_list", bot_selector.snippet_list))
     application.add_handler(CommandHandler("snippet_focus", bot_selector.snippet_select))
     application.add_handler(CommandHandler("snippet_unfocus", bot_selector.snippet_unfocus))
+
+    application.add_handler(CommandHandler("leaderboard", bot_leaderboard.leaderboard))
 
     # on non command i.e message - echo the message on Telegram
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_router.message))
