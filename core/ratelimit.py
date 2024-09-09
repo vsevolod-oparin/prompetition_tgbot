@@ -86,9 +86,10 @@ class RateLimiter:
 
     async def close(self):
         await self.queue.join()
-        for task in self.tasks:
-            task.cancel()
-        await asyncio.gather(*self.tasks, return_exceptions=True)
+        if self.tasks is not None:
+            for task in self.tasks:
+                task.cancel()
+            await asyncio.gather(*self.tasks, return_exceptions=True)
 
 
 class RateLimitedBatchQueue:

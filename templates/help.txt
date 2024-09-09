@@ -1,5 +1,33 @@
-Hello and welcome to Prompetition Bot! The bot to conduct and participate in prompt competitions!
+<b>General Rules</b>
 
-Here, you may select the task, try your prompts and get feedback in fully automatic mode.
+The rule of the game is simple. You are given a task and asked to produce certain type of output.
 
-Later on, it will be a bit more helpful message;)
+The tasks are split into open and hidden parts. The open parts serve to demonstrate what exactly is needed and to test the prompts. The hidden parts are used to evaluate the final score. You can think of the partitions as train vs. validation ones.
+
+Below is the list of commands you may use.
+
+<b>Common part</b>
+- /start - start the bot
+- /help - get this help message
+- /whoami - get your nickname
+- /set_name - set new nickname
+
+<b>Task/snippet selection</b>
+- /task_show - show current task
+- /task_list - list the tasks
+- /task_select - select particular task
+
+- /snippet_list - list open snippets under the task
+- /snippet_focus - select particular open snippet to focus prompt run on
+- /snippet_unfocus - forget the selected snippet
+
+<b>Prompt run</b>
+- /run_snippet - run prompt only on snippet under the focus
+- /run_open - run prompt on open part of the task
+- /run_to_score - run prompt on hidden part to get score
+
+- /switch_debug_mode - get more details when run on snippet or open part
+- /switch_autoclean - empty prompt after submit automatically
+
+<b>Leaderboard</b>
+- /leaderboard - get leaderboard per task

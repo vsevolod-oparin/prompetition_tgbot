@@ -25,7 +25,7 @@ class TGBotGeneral(Partial):
     # context.
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
-        await update.effective_chat.send_message(from_txt_file('templates/greetings.txt'))
+        await update.effective_chat.send_message(from_txt_file('templates/greetings.txt'), parse_mode='HTML')
         context.user_data[STATE_KEY] = MessageState.EXPECTING_NAME
         user = update.effective_user
         self.logger.info(f'/start / {user.id} / {user.name}')
@@ -37,7 +37,7 @@ class TGBotGeneral(Partial):
         """Send a message when the command /help is issued."""
         user = update.effective_user
         self.logger.info(f'/help / {user.id} / {user.name}.')
-        await update.effective_chat.send_message(from_txt_file('templates/help.txt'))
+        await update.effective_chat.send_message(from_txt_file('templates/help.txt'), parse_mode='HTML')
 
     async def whoami(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /help is issued."""
@@ -76,7 +76,7 @@ class TGBotGeneral(Partial):
                 self.sql_db.update_user_name(tg_user_id(update.effective_user.id), name)
                 context.user_data[STATE_KEY] = MessageState.IDLE
                 await update.effective_chat.send_message(
-                    f"Ok, now your name is stored as <b>{name}</b></>. You can change it with /set_name.",
+                    f"Ok, now your name is stored as <b>{name}</b>. You can change it with /set_name.",
                     parse_mode='HTML'
                 )
             else:

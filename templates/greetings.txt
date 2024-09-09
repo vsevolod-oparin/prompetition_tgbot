@@ -1,3 +1,6 @@
 Hello and welcome to Prompetition Bot! The bot to conduct and participate in prompt competitions!
 
 Here, you may select the task, try your prompts and get feedback in fully automatic mode.
+Use /task_list and /task_select to find the task. Once task selected, type in the prompt and follow the instructions.
+
+Use /help for more details.
