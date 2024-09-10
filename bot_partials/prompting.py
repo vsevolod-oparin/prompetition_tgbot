@@ -55,7 +55,12 @@ class TGPrompter(Partial):
     async def message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Echo the user message."""
         user = update.effective_user
-        prompt = update.message.text
+        if update.message:
+            prompt = update.message.text
+        elif update.edited_message:
+            prompt = update.edited_message.text
+        else:
+            return
         context.user_data[PROMPT_KEY] = prompt
         self.logger.info(f'prompting.message / {user.id} / {user.name}: new prompt set\n{prompt}')
         self.prompt_logger.info(f'prompting.message / {user.id} / {user.name}: new prompt set\n{prompt}')
@@ -102,7 +107,7 @@ class TGPrompter(Partial):
         user_id = tg_user_id(update.effective_user.id)
         result_batch = await self.runner.compute_hidden_batch(task, user_id, prompt)
         self.logger.info(f'/run_to_score / {user.id} / {user.name} / {result_batch.score * 100:.2f}')
-        self.prompt_logger.info(f'/run_to_score / {user.id} / {user.name}\n{prompt=}\n\n{result_batch.tg_html_form()=}')
+        self.prompt_logger.info(f'/run_to_score / {user.id} / {user.name}\nprompt={prompt}\n\nresult_batch={result_batch.tg_html_form()}')
         await message.edit_text(result_batch.tg_html_form_semihidden(), parse_mode='HTML')
 
         if context.user_data.get(AUTOCLEAN_KEY, DEFAULT_AUTOCLEAN_STATE):
@@ -155,7 +160,7 @@ class TGPrompter(Partial):
                 f'Total open avg score: {matcher.score() * 100:.2f}',
                 parse_mode='HTML'
             )
-        if context.user_data.get(AUTOCLEAN_KEY, AUTOCLEAN_KEY):
+        if context.user_data.get(AUTOCLEAN_KEY, DEFAULT_AUTOCLEAN_STATE):
             context.user_data[PROMPT_KEY] = ""
 
     async def run_snippet(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

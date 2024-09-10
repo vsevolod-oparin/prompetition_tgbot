@@ -104,30 +104,32 @@ def main(args) -> None:
                    .persistence(persistence)
                    .build())
 
+    filter = ~filters.UpdateType.EDITED_MESSAGE
+
     # on different commands - answer in Telegram
-    application.add_handler(CommandHandler("start", bot_general.start))
-    application.add_handler(CommandHandler("help", bot_general.help_command))
-    application.add_handler(CommandHandler("set_name", bot_general.set_name))
-    application.add_handler(CommandHandler("whoami", bot_general.whoami))
+    application.add_handler(CommandHandler("start", bot_general.start, filter))
+    application.add_handler(CommandHandler("help", bot_general.help_command, filter))
+    application.add_handler(CommandHandler("set_name", bot_general.set_name, filter))
+    application.add_handler(CommandHandler("whoami", bot_general.whoami, filter))
 
-    application.add_handler(CommandHandler("switch_debug_mode", bot_prompter.switch_debug_mode))
-    application.add_handler(CommandHandler("switch_autoclean", bot_prompter.switch_autoclean))
+    application.add_handler(CommandHandler("switch_debug_mode", bot_prompter.switch_debug_mode, filter))
+    application.add_handler(CommandHandler("switch_autoclean", bot_prompter.switch_autoclean, filter))
 
-    application.add_handler(CommandHandler("prompt_fetch", bot_prompter.prompt_fetch))
+    application.add_handler(CommandHandler("prompt_fetch", bot_prompter.prompt_fetch, filter))
 
-    application.add_handler(CommandHandler("run_snippet", bot_prompter.run_snippet))
-    application.add_handler(CommandHandler("run_open", bot_prompter.run_open))
-    application.add_handler(CommandHandler("run_to_score", bot_prompter.run_to_score))
+    application.add_handler(CommandHandler("run_snippet", bot_prompter.run_snippet, filter))
+    application.add_handler(CommandHandler("run_open", bot_prompter.run_open, filter))
+    application.add_handler(CommandHandler("run_to_score", bot_prompter.run_to_score, filter))
 
-    application.add_handler(CommandHandler("task_show", bot_selector.show_task))
-    application.add_handler(CommandHandler("task_list", bot_selector.task_list))
-    application.add_handler(CommandHandler("task_select", bot_selector.select_task))
+    application.add_handler(CommandHandler("task_show", bot_selector.show_task, filter))
+    application.add_handler(CommandHandler("task_list", bot_selector.task_list, filter))
+    application.add_handler(CommandHandler("task_select", bot_selector.select_task, filter))
 
-    application.add_handler(CommandHandler("snippet_list", bot_selector.snippet_list))
-    application.add_handler(CommandHandler("snippet_focus", bot_selector.snippet_select))
-    application.add_handler(CommandHandler("snippet_unfocus", bot_selector.snippet_unfocus))
+    application.add_handler(CommandHandler("snippet_list", bot_selector.snippet_list, filter))
+    application.add_handler(CommandHandler("snippet_focus", bot_selector.snippet_select, filter))
+    application.add_handler(CommandHandler("snippet_unfocus", bot_selector.snippet_unfocus, filter))
 
-    application.add_handler(CommandHandler("leaderboard", bot_leaderboard.leaderboard))
+    application.add_handler(CommandHandler("leaderboard", bot_leaderboard.leaderboard, filter))
 
     # on non command i.e message - echo the message on Telegram
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot_router.message))
