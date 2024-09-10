@@ -78,12 +78,13 @@ def main(args) -> None:
     queue = RateLimitedBatchQueue(limiter)
     prompt_runner = PromptRunner(aclient, limiter, queue, sql_db)
 
-    logger = produce_logger(Path(args.log_pth) / 'bot.log')
+    logger = produce_logger(Path(args.log_pth) / 'bot.log', logger_tag='bot')
+    prompt_logger = produce_logger(Path(args.log_pth) / 'prompts.log', logger_tag='prompts', propagate=False)
     error_logger = produce_logger(Path(args.log_pth) / 'error.log', logger_tag='error_bot')
 
     bot_general = TGBotGeneral(logger, sql_db)
     bot_leaderboard = TGLeaderboard(logger, sql_db)
-    bot_prompter = TGPrompter(logger, task_manager, prompt_runner)
+    bot_prompter = TGPrompter(logger, prompt_logger, task_manager, prompt_runner)
     bot_selector = TGSelector(logger, task_manager)
     bot_error = TGErrorHandler(error_logger)
 
@@ -111,6 +112,8 @@ def main(args) -> None:
 
     application.add_handler(CommandHandler("switch_debug_mode", bot_prompter.switch_debug_mode))
     application.add_handler(CommandHandler("switch_autoclean", bot_prompter.switch_autoclean))
+
+    application.add_handler(CommandHandler("prompt_fetch", bot_prompter.prompt_fetch))
 
     application.add_handler(CommandHandler("run_snippet", bot_prompter.run_snippet))
     application.add_handler(CommandHandler("run_open", bot_prompter.run_open))

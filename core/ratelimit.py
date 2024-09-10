@@ -30,7 +30,6 @@ async def worker(name, queue, time_range_s):
             sleep_for = time_range_s - delta_s
             await asyncio.sleep(sleep_for)
 
-
 class RateLimiter:
 
     def __init__(self,
@@ -80,8 +79,9 @@ class RateLimiter:
         else:
             return None
 
-    async def submit_batch(self, routines):
-        batch = [self.submit(routine) for routine in routines]
+    async def submit_batch(self, routine_batch):
+        await self.start_if_not()
+        batch = [self.submit(routine) for routine in routine_batch]
         return await asyncio.gather(*batch)
 
     async def close(self):

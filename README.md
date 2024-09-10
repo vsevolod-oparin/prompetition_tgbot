@@ -24,6 +24,7 @@ whoami - get name
 set_name - set new name
 switch_debug_mode - to switch debug mode
 switch_autoclean - empty prompt after submit
+prompt_fetch - fetch current prompt
 task_show - show current task
 task_list - list the tasks
 task_select - list the tasks

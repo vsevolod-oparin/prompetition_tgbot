@@ -9,6 +9,7 @@ Below is the list of commands you may use.
 <b>Common part</b>
 - /start - start the bot
 - /help - get this help message
+
 - /whoami - get your nickname
 - /set_name - set new nickname
 
@@ -22,6 +23,8 @@ Below is the list of commands you may use.
 - /snippet_unfocus - forget the selected snippet
 
 <b>Prompt run</b>
+- /prompt_fetch - fetch current prompt
+
 - /run_snippet - run prompt only on snippet under the focus
 - /run_open - run prompt on open part of the task
 - /run_to_score - run prompt on hidden part to get score

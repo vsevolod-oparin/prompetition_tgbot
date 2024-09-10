@@ -12,14 +12,18 @@ from core.prompter import PromptRunner
 from core.task_management import TaskManager
 from core.utils import html_escape, tg_user_id
 
+DEFAULT_DEBUG_STATE = True
+DEFAULT_AUTOCLEAN_STATE = False
 
 class TGPrompter(Partial):
 
     def __init__(self,
                  logger: Logger,
+                 prompt_logger: Logger,
                  task_manager: TaskManager,
                  runner: PromptRunner):
         self.logger = logger
+        self.prompt_logger = prompt_logger
         self.task_manager = task_manager
         self.runner = runner
 
@@ -30,7 +34,7 @@ class TGPrompter(Partial):
     async def switch_debug_mode(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
         user = update.effective_user
-        debug = context.user_data.get(DEBUG_KEY, False)
+        debug = context.user_data.get(DEBUG_KEY, DEFAULT_DEBUG_STATE)
         debug = not debug
         context.user_data[DEBUG_KEY] = debug
         message = "Debug mode is on." if debug else "Debug mode is off."
@@ -40,7 +44,7 @@ class TGPrompter(Partial):
     async def switch_autoclean(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
         user = update.effective_user
-        autoclean = context.user_data.get(AUTOCLEAN_KEY, False)
+        autoclean = context.user_data.get(AUTOCLEAN_KEY, DEFAULT_AUTOCLEAN_STATE)
         autoclean = not autoclean
         context.user_data[AUTOCLEAN_KEY] = autoclean
         message = "Autoclean mode is on." if autoclean else "Autoclean mode is off."
@@ -53,6 +57,7 @@ class TGPrompter(Partial):
         prompt = update.message.text
         context.user_data[PROMPT_KEY] = prompt
         self.logger.info(f'prompting.message / {user.id} / {user.name}: new prompt set\n{prompt}')
+        self.prompt_logger.info(f'prompting.message / {user.id} / {user.name}: new prompt set\n{prompt}')
         prompt = html_escape(prompt)
 
         prompt.replace('<', '&lt;')
@@ -65,6 +70,14 @@ class TGPrompter(Partial):
         await update.effective_chat.send_message(
             f"New prompt:\n<code>{prompt}</code>\n\n{hint_msg}", parse_mode='HTML'
         )
+
+    async def prompt_fetch(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        user = update.effective_user
+        prompt = context.user_data.get(PROMPT_KEY, None)
+        self.logger.info(f'/prompt_fetch / {user.id} / {user.name}: {len(prompt) if prompt else "nothing"}')
+        message = f"No prompt is set" if prompt is None else prompt
+        await update.effective_chat.send_message(message)
+
 
     async def run_to_score(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Send a message when the command /start is issued."""
@@ -87,9 +100,10 @@ class TGPrompter(Partial):
         message = await update.effective_chat.send_message('Computing...')
         user_id = tg_user_id(update.effective_user.id)
         result_batch = await self.runner.compute_hidden_batch(task, user_id, prompt)
+        self.prompt_logger.info(f'Hidden run: {result_batch.tg_html_form()}')
         await message.edit_text(result_batch.tg_html_form_semihidden(), parse_mode='HTML')
 
-        if context.user_data.get(AUTOCLEAN_KEY, False):
+        if context.user_data.get(AUTOCLEAN_KEY, DEFAULT_AUTOCLEAN_STATE):
             context.user_data[PROMPT_KEY] = ""
 
     async def run_open(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -109,7 +123,7 @@ class TGPrompter(Partial):
             await update.effective_chat.send_message("Please enter your prompt first.")
             return
         context.user_data[STOP_KEY] = False
-        debug = context.user_data.get(DEBUG_KEY, False)
+        debug = context.user_data.get(DEBUG_KEY, DEFAULT_DEBUG_STATE)
         self.logger.info(f'/run_open / {user.id} / {user.name} / {debug}')
         if not debug:
             message = await update.effective_chat.send_message('Computing...')
@@ -132,13 +146,13 @@ class TGPrompter(Partial):
                     matcher=matcher,
                 )
                 prefix = f'{idd + 1}/{total}. '
-                self.logger.info(f'Debug output data: {prefix + eval.tg_html_form()}')
+                self.prompt_logger.info(f'Open run: {prefix + eval.tg_html_form()}')
                 await update.effective_chat.send_message(prefix + eval.tg_html_form(), parse_mode='HTML')
             await update.effective_chat.send_message(
                 f'Total open avg score: {matcher.score() * 100:.2f}',
                 parse_mode='HTML'
             )
-        if context.user_data.get(AUTOCLEAN_KEY, False):
+        if context.user_data.get(AUTOCLEAN_KEY, AUTOCLEAN_KEY):
             context.user_data[PROMPT_KEY] = ""
 
     async def run_snippet(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -177,4 +191,5 @@ class TGPrompter(Partial):
             prompt=prompt,
             matcher=matcher,
         )
+        self.prompt_logger.info(f'Snippet run: {eval.tg_html_form()}')
         await update.effective_chat.send_message(eval.tg_html_form(), parse_mode='HTML')

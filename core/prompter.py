@@ -90,6 +90,18 @@ class PromptRunner:
         self.sql_db = sql_db
 
     async def process_snippet(self,
+                                        task: PromptTask,
+                                        snippet_id: str,
+                                        prompt: str,
+                                        matcher: Matcher,
+                                        custom_snippet_dct: Dict = None) -> SnippetEvaluation:
+        return await self.rate_limiter.submit(
+            self._process_snippet_unlim(
+                task, snippet_id, prompt, matcher, custom_snippet_dct
+            )
+        )
+
+    async def _process_snippet_unlim(self,
                               task: PromptTask,
                               snippet_id: str,
                               prompt: str,
@@ -99,11 +111,11 @@ class PromptRunner:
         snippet_dct = task_snippet_dcts[snippet_id]
         snippet_txt = snippet_dct['Task']
         snippet_answer = snippet_dct['Answer']
-        result_msg = await self.rate_limiter.submit(get_ai_response(
+        result_msg = await get_ai_response(
             client=self.aclient,
             system_prompt=prompt,
             prompt=snippet_txt
-        ))
+        )
         result_data = task.reply_pipe(result_msg)
         answer_data = task.answer_pipe(snippet_answer)
         score = matcher.accumulate(result_data, answer_data)
@@ -123,10 +135,10 @@ class PromptRunner:
                                  prompt: str,
                                  tag: str = None):
         matcher = task.get_matcher()
-        tasks = []
+        task_batch = []
         for snippet_id in snippet_dct:
-            tasks.append(self.process_snippet(task, snippet_id, prompt, matcher, snippet_dct))
-        eval_list = await self.queue.add_batch_task(tasks)
+            task_batch.append(self._process_snippet_unlim(task, snippet_id, prompt, matcher, snippet_dct))
+        eval_list = await self.queue.add_batch_task(task_batch)
         return SnippetBatchEvaluation(
             score=matcher.score(),
             task_id=task.id,
@@ -135,12 +147,14 @@ class PromptRunner:
         )
 
     async def compute_open_batch(self, task: PromptTask, user_id: str, prompt: str):
+        print(1)
         evall = await self.compute_task_batch(
             task=task,
             snippet_dct=task.open_snippets,
             prompt=prompt,
             tag="open"
         )
+        print(100)
         self.sql_db.insert_prompt_run(
             user_id=user_id,
             task_id=task.id,

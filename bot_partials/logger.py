@@ -20,6 +20,8 @@ def init_logging():
 # Set up file handler with rotation
 def produce_logger(
         log_file: Union[str | Path],
+        *,
+        propagate: bool = None,
         max_bytes: int = MAX_BYTES_IN_LOG,
         backup_count: int = DEFAULT_BACKUP_COUNT,
         logger_tag: str = LOGGER_TAG) -> logging.Logger:
@@ -43,11 +45,14 @@ def produce_logger(
     logger.setLevel(logging.INFO)
     logger.addHandler(file_handler)
 
+    if propagate is not None:
+        logger.propagate = propagate
+
     return logger
 
 # Example log messages
 if __name__ == '__main__':
-    logger = produce_logger('logs/bot.log', 5_000_000)
+    logger = produce_logger('logs/bot.log', max_bytes=5_000_000)
     logger.debug('This is a debug message')
     logger.info('This is an info message')
     logger.warning('This is a warning message')
