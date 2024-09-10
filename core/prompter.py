@@ -17,7 +17,7 @@ def data_to_str(data):
         return data
     if isinstance(data, Dict):
         return json.dumps(data, indent=2)
-    return data
+    return str(data)
 
 
 @dataclasses.dataclass
@@ -34,8 +34,8 @@ class SnippetEvaluation:
         return "\n".join([
             f'Score: <b>{self.score * 100.0:.2f}%</b>',
             f'Text:\n<code>{html_escape(self.snippet_txt)}</code>',
-            f'Result:\n<code>{data_to_str(self.result_data)}</code>',
-            f'Answer:\n<code>{data_to_str(self.answer_data)}</code>',
+            f'Result:\n<code>{html_escape(data_to_str(self.result_data))}</code>',
+            f'Answer:\n<code>{html_escape(data_to_str(self.answer_data))}</code>',
             f'Result message:\n<code>### BEGIN ###\n{html_escape(self.result_msg)}\n### END ###</code>'
         ])
 

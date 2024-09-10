@@ -52,8 +52,8 @@ class TGPrompter(Partial):
         user = update.effective_user
         prompt = update.message.text
         context.user_data[PROMPT_KEY] = prompt
-        prompt = html_escape(prompt)
         self.logger.info(f'prompting.message / {user.id} / {user.name}: new prompt set\n{prompt}')
+        prompt = html_escape(prompt)
 
         prompt.replace('<', '&lt;')
         hints = [
@@ -132,6 +132,7 @@ class TGPrompter(Partial):
                     matcher=matcher,
                 )
                 prefix = f'{idd + 1}/{total}. '
+                self.logger.info(f'Debug output data: {prefix + eval.tg_html_form()}')
                 await update.effective_chat.send_message(prefix + eval.tg_html_form(), parse_mode='HTML')
             await update.effective_chat.send_message(
                 f'Total open avg score: {matcher.score() * 100:.2f}',

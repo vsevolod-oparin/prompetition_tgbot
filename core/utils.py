@@ -1,4 +1,5 @@
 import json
+from importlib.resources import contents
 from pathlib import Path
 from typing import Union, Any
 
@@ -8,6 +9,9 @@ def from_txt_file(filepath: PathLike):
     with open(filepath, 'r') as f:
         return f.read()
 
+def to_txt_file(filepath: PathLike, content: str):
+    with open(filepath, 'w') as f:
+        f.write(content)
 
 def from_json_file(filepath: PathLike):
     with open(filepath, 'r') as f:

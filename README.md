@@ -44,7 +44,6 @@ PoC is ready.
 
 **Before announcements**
 
-- Rewrite help and greeting message.
 - Fully implement tasks with open and hidden parts
 
 
