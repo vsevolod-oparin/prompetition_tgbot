@@ -147,14 +147,12 @@ class PromptRunner:
         )
 
     async def compute_open_batch(self, task: PromptTask, user_id: str, prompt: str):
-        print(1)
         evall = await self.compute_task_batch(
             task=task,
             snippet_dct=task.open_snippets,
             prompt=prompt,
             tag="open"
         )
-        print(100)
         self.sql_db.insert_prompt_run(
             user_id=user_id,
             task_id=task.id,

@@ -100,7 +100,8 @@ class TGPrompter(Partial):
         message = await update.effective_chat.send_message('Computing...')
         user_id = tg_user_id(update.effective_user.id)
         result_batch = await self.runner.compute_hidden_batch(task, user_id, prompt)
-        self.prompt_logger.info(f'Hidden run: {result_batch.tg_html_form()}')
+        self.logger.info(f'/run_to_score / {user.id} / {user.name} / {result_batch.score * 100:.2f}')
+        self.prompt_logger.info(f'/run_to_score / {user.id} / {user.name}\n{prompt=}\n\n{result_batch.tg_html_form()=}')
         await message.edit_text(result_batch.tg_html_form_semihidden(), parse_mode='HTML')
 
         if context.user_data.get(AUTOCLEAN_KEY, DEFAULT_AUTOCLEAN_STATE):
@@ -139,15 +140,16 @@ class TGPrompter(Partial):
                 if context.user_data.get(STOP_KEY, False):
                     context.user_data[STOP_KEY] = False
                     break
-                eval = await self.runner.process_snippet(
+                evall = await self.runner.process_snippet(
                     task=task,
                     snippet_id=snippet_id,
                     prompt=prompt,
                     matcher=matcher,
                 )
                 prefix = f'{idd + 1}/{total}. '
-                self.prompt_logger.info(f'Open run: {prefix + eval.tg_html_form()}')
-                await update.effective_chat.send_message(prefix + eval.tg_html_form(), parse_mode='HTML')
+                self.prompt_logger.info(f'/run_open / {user.id} / {user.name} / {prefix + evall.tg_html_form()}')
+                await update.effective_chat.send_message(prefix + evall.tg_html_form(), parse_mode='HTML')
+            self.logger.info(f'/run_open / {user.id} / {user.name} / {matcher.score() * 100:.2f}')
             await update.effective_chat.send_message(
                 f'Total open avg score: {matcher.score() * 100:.2f}',
                 parse_mode='HTML'
@@ -185,11 +187,12 @@ class TGPrompter(Partial):
         await update.effective_chat.send_message(f'Processing Task {focus.task} / Snippet: {focus.snippet}')
 
         matcher = task.get_matcher()
-        eval = await self.runner.process_snippet(
+        evall = await self.runner.process_snippet(
             task=task,
             snippet_id=focus.snippet,
             prompt=prompt,
             matcher=matcher,
         )
-        self.prompt_logger.info(f'Snippet run: {eval.tg_html_form()}')
-        await update.effective_chat.send_message(eval.tg_html_form(), parse_mode='HTML')
+        self.logger.info(f'/run_snippet / {user.id} / {user.name} / {evall.score * 100:.2f}')
+        self.prompt_logger.info(f'/run_snippet / {user.id} / {user.name} / {evall.tg_html_form()}')
+        await update.effective_chat.send_message(evall.tg_html_form(), parse_mode='HTML')
