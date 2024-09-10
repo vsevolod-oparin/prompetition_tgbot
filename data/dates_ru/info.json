@@ -4,18 +4,21 @@
   "lang": "ru",
   "description": "По заданному сообщению, найдите все даты указанные прямым или косвенным способом. Выход должен заканчиваться тремя дефисами, после которых идет список дат. Формат дат: <год>/<месяц>/<день>. Для деталей, смотрите пример из промпта",
   "sample_prompt_pth": "sample_prompt.txt",
-  "exposed": false,
+  "exposed": true,
   "open_snippets": [
     "snippets/open_1",
     "snippets/open_2",
     "snippets/open_3",
-    "snippets/open_4"
+    "snippets/open_4",
+    "snippets/open_5",
+    "snippets/open_6"
   ],
   "hidden_snippets": [
-    "snippets/open_1",
-    "snippets/open_2",
-    "snippets/open_3",
-    "snippets/open_4"
+    "snippets/hidden_1",
+    "snippets/hidden_2",
+    "snippets/hidden_3",
+    "snippets/hidden_4",
+    "snippets/hidden_5"
   ],
   "matcher": "avg_iou",
   "reply_pipe": [
