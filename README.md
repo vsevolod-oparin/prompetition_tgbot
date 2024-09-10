@@ -2,6 +2,8 @@
 
 The Telegram bot to run competition for the seek of the best prompts.
 
+The bot: https://t.me/prompetition_bot
+
 ## Rules
 
 Each task consists of two parts -- open and hidden. Open part is to test the prompt and see explicitly how LLM proceeds.
