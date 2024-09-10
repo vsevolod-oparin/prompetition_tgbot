@@ -31,6 +31,10 @@ export DS=<DeepSeek API>
 python3 bot.py
 ```
 
+### Custom LLMs
+
+If you want to use another OpenAPI LLM just add it into `data/llm_config` and mention its usage under `llm` in `task / info.json`.
+
 ## Bot commands
 
 TG Commands Control
@@ -60,7 +64,6 @@ leaderboard - leaderboard per task
 **Future developments**
 
 Functionality:
-- Custom LLM inside the task
 - Add needed parameters to control (temperature, freq penalty and so on)
 - Add honoring medals
 
