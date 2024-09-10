@@ -4,7 +4,7 @@ llms:
     api_key_env: DS
     model_name: deepseek-chat
 
-  local_ollama:
+  local_mistral:
     baseurl: http://127.0.0.1:11434/v1
     api_key: ollama
     model_name: mistral

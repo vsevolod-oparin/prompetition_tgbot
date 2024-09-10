@@ -1,0 +1,34 @@
+{
+  "id": "dates_mistral7b_en",
+  "title": "Find the Dates on Mistral 7b",
+  "lang": "en",
+  "description": "Given a text message, find all mentioned dates be them explicit or implicit. The output message should end with triple dashes '---' followed by the list of dates in format <year>/<month>/<day>. Each date should be place in a new line. See the sample prompt for the details.",
+  "sample_prompt_pth": "sample_prompt.txt",
+  "llm": "local_mistral",
+  "exposed": true,
+  "open_snippets": [
+    "snippets/open_1",
+    "snippets/open_2",
+    "snippets/open_3",
+    "snippets/open_4",
+    "snippets/open_5",
+    "snippets/open_6"
+  ],
+  "hidden_snippets": [
+    "snippets/hidden_1",
+    "snippets/hidden_2",
+    "snippets/hidden_3",
+    "snippets/hidden_4",
+    "snippets/hidden_5"
+  ],
+  "matcher": "avg_iou",
+  "reply_pipe": [
+    {"type": "last_chunk", "separator":  "---"},
+    {"type": "line_split"},
+    {"type": "to_answer_type"}
+  ],
+  "answer_pipe": [
+    {"type": "to_answer_type"}
+  ],
+  "answer_type": "set"
+}
