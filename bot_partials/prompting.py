@@ -124,7 +124,7 @@ class TGPrompter(Partial):
             return
         context.user_data[STOP_KEY] = False
         debug = context.user_data.get(DEBUG_KEY, DEFAULT_DEBUG_STATE)
-        self.logger.info(f'/run_open / {user.id} / {user.name} / {debug}')
+        self.logger.info(f'/run_open / {user.id} / {user.name} / {debug = }')
         if not debug:
             message = await update.effective_chat.send_message('Computing...')
             user_id = tg_user_id(update.effective_user.id)

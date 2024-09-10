@@ -39,6 +39,8 @@ class TGSelector(Partial):
             result_lst.append(f'<b>{lang.upper()}</b>')
             result_lst.append('\n'.join(lst))
             result_lst.append('')
+        first_id = task_conf_list[0]["id"]
+        result_lst.append(f'Use command /task_select, to choose a particular task. E.g. "/task_select {first_id}"')
 
         await update.message.reply_text('\n'.join(result_lst).strip(), parse_mode='HTML')
 
@@ -84,6 +86,7 @@ class TGSelector(Partial):
         focus = FocusManagement(context)
         if focus.task is None:
             await update.effective_chat.send_message(if_not)
+            await self.task_list(update, context)
             return None
         return self.task_manager.get_current_task(focus.task)
 
@@ -93,7 +96,7 @@ class TGSelector(Partial):
         current_task = await self._get_task_or_complain(
             update,
             context,
-            if_not="To see the snippets, you must select a task first. Use /select command.",
+            if_not="To see the snippets, you must select a task first. Use /snippet_focus command.",
         )
         if current_task is None:
             return
@@ -109,7 +112,7 @@ class TGSelector(Partial):
         current_task = await self._get_task_or_complain(
             update,
             context,
-            if_not="To select the snippet, you must select a task first. Use /select command.",
+            if_not="To select the snippet, you must select a task first. Use /snippet_focus command.",
         )
         if current_task is None:
             self.logger.info(f'/snippet_focus / {user.id} / {user.name}: no task')
@@ -174,7 +177,7 @@ class TGSelector(Partial):
         current_task = await self._get_task_or_complain(
             update,
             context,
-            if_not="To see the task, select a task first. Use /select command.",
+            if_not="To see the task, select a task first. Running /task_list the see the choices.",
         )
         if current_task is None:
             self.logger.info(
