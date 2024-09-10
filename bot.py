@@ -135,9 +135,12 @@ def main(args) -> None:
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
-    asyncio.run(limiter.close())
-    sql_db.close()
-    asyncio.run(aclient.close())
+    async def to_close():
+        await limiter.close()
+        sql_db.close()
+        await aclient.close()
+
+    asyncio.run(to_close())
 
 
 if __name__ == "__main__":
