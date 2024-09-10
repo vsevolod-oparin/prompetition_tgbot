@@ -8,6 +8,7 @@ from bot_partials.focus import FocusManagement
 from bot_partials.partial import Partial
 from bot_partials.state import MessageState
 from bot_partials.userdata_keys import PROMPT_KEY, AUTOCLEAN_KEY, DEBUG_KEY, STOP_KEY
+from core.llm_manager import LLMManager
 from core.prompter import PromptRunner
 from core.task_management import TaskManager
 from core.utils import html_escape, tg_user_id

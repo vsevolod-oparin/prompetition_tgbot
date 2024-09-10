@@ -31,6 +31,7 @@ from bot_partials.logger import produce_logger, init_logging
 from bot_partials.prompting import TGPrompter
 from bot_partials.router import MessageRouter
 from bot_partials.selector import TGSelector
+from core.llm_manager import LLMManager
 from core.prompt_db import PromptDBManager
 from core.prompter import PromptRunner
 from core.ratelimit import RateLimiter, RateLimitedBatchQueue
@@ -71,10 +72,11 @@ def main(args) -> None:
 
     task_manager = TaskManager(args)
     sql_db = PromptDBManager()
+    llms = LLMManager(Path(args.data_root) / 'llm_config.yaml')
 
     limiter = RateLimiter()
     queue = RateLimitedBatchQueue(limiter)
-    prompt_runner = PromptRunner(aclient, limiter, queue, sql_db)
+    prompt_runner = PromptRunner(limiter, queue, sql_db, llms)
 
     logger = produce_logger(Path(args.log_pth) / 'bot.log', logger_tag='bot')
     prompt_logger = produce_logger(Path(args.log_pth) / 'prompts.log', logger_tag='prompts', propagate=False)

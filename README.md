@@ -58,8 +58,16 @@ leaderboard - leaderboard per task
 ### Future plans
 
 **Future developments**
+
+Functionality:
 - Custom LLM inside the task
-- Implement callbacks to update status.
 - Add needed parameters to control (temperature, freq penalty and so on)
+- Add honoring medals
+
+Interface
+- Implement callbacks to update status.
+- Add menu buttons
+- Rename switch debug to something like hide details
+
+Back infra
 - Add task verification
-- Add honoring medal

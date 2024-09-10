@@ -1,7 +1,9 @@
 <b>{{ title }} ({{ id }})</b>
 
 <b>Description</b>: {{ description }}
-
+{% if llm %}
+<b>LLM</b>: {{ llm }}
+{% endif %}
 <b>Open Texts:</b>
 {% for name, obj in open_snippets.items() %}
 <b>Name</b>: {{ name }}

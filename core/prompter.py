@@ -1,10 +1,9 @@
 import dataclasses
 import json
-from typing import Any, Dict, List
-
-from openai import AsyncOpenAI
+from typing import Any, Dict, List, Optional
 
 from core.ai import get_ai_response
+from core.llm_manager import LLMManager
 from core.matcher import Matcher
 from core.prompt_db import PromptDBManager
 from core.ratelimit import RateLimiter, RateLimitedBatchQueue
@@ -80,14 +79,14 @@ class SnippetBatchEvaluation:
 class PromptRunner:
 
     def __init__(self,
-                 aclient: AsyncOpenAI,
                  rate_limiter: RateLimiter,
                  queue: RateLimitedBatchQueue,
-                 sql_db: PromptDBManager):
-        self.aclient = aclient
+                 sql_db: PromptDBManager,
+                 llms: LLMManager):
         self.rate_limiter = rate_limiter
         self.queue = queue
         self.sql_db = sql_db
+        self.llms = llms
 
     async def process_snippet(self,
                                         task: PromptTask,
@@ -111,8 +110,8 @@ class PromptRunner:
         snippet_dct = task_snippet_dcts[snippet_id]
         snippet_txt = snippet_dct['Task']
         snippet_answer = snippet_dct['Answer']
-        result_msg = await get_ai_response(
-            client=self.aclient,
+        result_msg = await self.llms.get_ai_response(
+            llm_name=task.llm,
             system_prompt=prompt,
             prompt=snippet_txt
         )

@@ -4,6 +4,7 @@
   "lang": "en",
   "description": "Given a text message, find all mentioned dates be them explicit or implicit. The output message should end with triple dashes '---' followed by the list of dates in format <year>/<month>/<day>. Each date should be place in a new line. See the sample prompt for the details.",
   "sample_prompt_pth": "sample_prompt.txt",
+  "llm": "deepseek",
   "exposed": true,
   "open_snippets": [
     "snippets/open_1",
