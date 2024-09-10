@@ -3,11 +3,6 @@ from typing import List
 
 from pathlib import Path
 import argparse
-import gradio as gr
-import os
-import json
-
-from core.utils import from_txt_file, to_txt_file
 
 
 def parse_args(input_string: List[str] = None) -> argparse.Namespace:

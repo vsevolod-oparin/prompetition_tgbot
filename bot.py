@@ -16,9 +16,7 @@ bot.
 """
 import argparse
 import asyncio
-import logging
 import os
-from multiprocessing.util import get_logger
 from pathlib import Path
 from typing import List
 
