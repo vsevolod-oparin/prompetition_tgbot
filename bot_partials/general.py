@@ -43,6 +43,12 @@ class TGBotGeneral(Partial):
         """Send a message when the command /help is issued."""
         user = update.effective_user
         name = context.user_data.get(USER_NAME_KEY, None)
+
+        if name is None:
+            name = self.sql_db.get_user_name(tg_user_id(update.effective_user.id))
+            if name is not None:
+                context.user_data[USER_NAME_KEY] = name
+
         message = name or "No name has been found."
         self.logger.info(f'/whoami / {user.id} / {user.name}: {message}')
         await update.effective_chat.send_message(message)

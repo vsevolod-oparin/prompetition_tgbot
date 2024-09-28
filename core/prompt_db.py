@@ -253,5 +253,17 @@ class PromptDBManager:
         self.cursor.execute(query, user_ids)
         return self.cursor.fetchall()
 
+    def get_user_name(self, user_id: str):
+        query = f'''
+            SELECT user_name 
+            FROM users 
+            WHERE user_id = ?
+        '''
+        self.cursor.execute(query, (user_id,))
+        result = self.cursor.fetchall()
+        if len(result) == 0:
+            return None
+        return result[0][0]
+
     def close(self):
         self.conn.close()
